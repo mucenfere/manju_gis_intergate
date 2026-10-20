@@ -1,0 +1,27 @@
+{
+"type": "FeatureCollection",
+"name": "willowpalisade_gate",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "白石嘴門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 120.128369550000116, 40.616484809000049 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "明水堂門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 119.894216602000014, 40.367373739000065 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "梨樹溝門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 120.154008321000106, 40.630729098000074 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "新臺門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 120.420302756000069, 40.833345538000053 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "松嶺子門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 120.717068290000057, 41.252445659000045 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "九官臺門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 121.057849066000017, 41.613757258000078 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "清河門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 121.423345795000046, 41.788646245000045 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "白土廠門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 121.875925149000068, 41.830871857000034 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "彰武臺門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 122.707991158000027, 42.27470296100006 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "發庫門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 123.402150499000086, 42.502805828000078 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "威遠堡門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 124.267348615000074, 42.674424203000044 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "布爾圖庫門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 124.426862410000012, 43.080756218000033 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "英額門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 125.096308072000056, 42.175575988000048 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "克爾蘇門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 124.75969077600007, 43.352348136000039 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "伊屯門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 125.327163643000063, 43.66354590900005 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "法特哈門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 126.514822262000052, 44.483939670000055 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "汪清門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 125.310267738000107, 41.684144744000051 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "鹼廠門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 124.599991500000087, 41.225875053000046 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "靉哈門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 124.51965081000003, 40.902292741000053 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "name_chf": "鳳凰城門", "name_chj": null, "name_ma": null }, "geometry": { "type": "Point", "coordinates": [ 124.08104235900008, 40.346779714000036 ] } }
+]
+}

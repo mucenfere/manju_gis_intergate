@@ -1,0 +1,27 @@
+{
+"type": "FeatureCollection",
+"name": "willowpalisade_gate_kxyz",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "name_chf": "白石嘴門", "name_ma": "be xi dzui duka", "name_chj": "白石嘴门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 120.128369550000116, 40.616484809000049 ] } },
+{ "type": "Feature", "properties": { "name_chf": "明水堂門", "name_ma": "ming xui tang duka", "name_chj": "明水堂门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 119.894216602000014, 40.367373739000065 ] } },
+{ "type": "Feature", "properties": { "name_chf": "梨樹溝門", "name_ma": "lii xu geo duka", "name_chj": "梨树沟门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 120.154008321000106, 40.630729098000074 ] } },
+{ "type": "Feature", "properties": { "name_chf": "新臺門", "name_ma": "sin tai duka", "name_chj": "新台门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 120.420302756000069, 40.833345538000053 ] } },
+{ "type": "Feature", "properties": { "name_chf": "松嶺子門", "name_ma": "sung ling dzi duka", "name_chj": "松岭子门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 120.717068290000057, 41.252445659000045 ] } },
+{ "type": "Feature", "properties": { "name_chf": "九官臺門", "name_ma": "gio guwan tai duka", "name_chj": "九官台门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 121.057849066000017, 41.613757258000078 ] } },
+{ "type": "Feature", "properties": { "name_chf": "清河門", "name_ma": "cing ho duka", "name_chj": "清河门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 121.423345795000046, 41.788646245000045 ] } },
+{ "type": "Feature", "properties": { "name_chf": "白土廠門", "name_ma": "be tu cang duka", "name_chj": "白土厂门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 121.875925149000068, 41.830871857000034 ] } },
+{ "type": "Feature", "properties": { "name_chf": "彰武臺門", "name_ma": "janggutai duka", "name_chj": "彰武台门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 122.707991158000027, 42.27470296100006 ] } },
+{ "type": "Feature", "properties": { "name_chf": "發庫門", "name_ma": "fakv duka", "name_chj": "发库门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 123.402150499000086, 42.502805828000078 ] } },
+{ "type": "Feature", "properties": { "name_chf": "威遠堡門", "name_ma": "wei yuwan pu duka", "name_chj": "威远堡门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 124.267348615000074, 42.674424203000044 ] } },
+{ "type": "Feature", "properties": { "name_chf": "布爾圖庫蘇巴爾罕門", "name_ma": "burtuku subargan duka", "name_chj": "布尔图库苏巴尔罕门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 124.426862410000012, 43.080756218000033 ] } },
+{ "type": "Feature", "properties": { "name_chf": "(舊)英額門", "name_ma": "yengge duka", "name_chj": "(旧)英额门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 125.037079063221981, 42.155276501696093 ] } },
+{ "type": "Feature", "properties": { "name_chf": "克爾蘇門", "name_ma": "kersu duka", "name_chj": "克尔苏门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 124.75969077600007, 43.352348136000039 ] } },
+{ "type": "Feature", "properties": { "name_chf": "伊屯門", "name_ma": "itun duka", "name_chj": "伊屯门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 125.327163643000063, 43.66354590900005 ] } },
+{ "type": "Feature", "properties": { "name_chf": "法特哈門", "name_ma": "fatha duka", "name_chj": "法特哈门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 126.514822262000052, 44.483939670000055 ] } },
+{ "type": "Feature", "properties": { "name_chf": "(舊)汪清門", "name_ma": "wangcing duka", "name_chj": "(旧)汪清门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 125.204776630458554, 41.708881159208346 ] } },
+{ "type": "Feature", "properties": { "name_chf": "鹼廠門", "name_ma": "giyamcan duka", "name_chj": "碱厂门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 124.599991500000087, 41.225875053000046 ] } },
+{ "type": "Feature", "properties": { "name_chf": "靉哈門", "name_ma": "aiha duka", "name_chj": "叆哈门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 124.51965081000003, 40.902292741000053 ] } },
+{ "type": "Feature", "properties": { "name_chf": "鳳凰城門", "name_ma": "fuhacan duka", "name_chj": "凤凰城门", "name_alias": null, "time": null }, "geometry": { "type": "Point", "coordinates": [ 124.082234098026106, 40.346265539692965 ] } }
+]
+}
