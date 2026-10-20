@@ -80,19 +80,15 @@
     .labels-hidden .leaflet-tooltip.plain-label { display: none !important; }
 
     .leaflet-control-layers{
-      max-height: calc(100vh - 60px);
+      max-height: calc(100vh - 60px - 54px);
       overflow: hidden;
+      min-width: 200px;
     }
     .leaflet-control-layers-overlays{
-      max-height: calc(100vh - 140px);
+      max-height: calc(100vh - 140px - 54px);
       overflow-y: auto;
       overflow-x: hidden;
       padding-right: 6px;
-    }
-    .leaflet-control-layers {
-      max-height: calc(100vh - 60px);
-      overflow: hidden;
-      min-width: 200px;
     }
 
     .leaflet-control-layers-group-label {
@@ -315,7 +311,7 @@
       text-align: center;
     }
 
-    /* ── 시계열 황제 버튼 바 ── */
+    /* ── 시계열 황제 슬라이더 바 ── */
     .timeline-bar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -325,49 +321,87 @@
       z-index: 1400;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 0 24px;
-      gap: 10px;
+      padding: 0 32px;
+      gap: 0;
       border-top: 1px solid rgba(255,255,255,0.1);
     }
-    .timeline-bar label {
+
+    /* 눈금 트랙 영역 */
+    .era-track {
+      flex: 1;
+      position: relative;
+      height: 54px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* 가로 선 */
+    .era-track-line {
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 3px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      transform: translateY(-50%);
+    }
+    .era-track-fill {
+      position: absolute;
+      top: 50%; left: 0;
+      height: 3px;
+      background: #4d8eff;
+      border-radius: 2px;
+      transform: translateY(-50%);
+      transition: width 0.2s;
+    }
+
+    /* 눈금 점들 */
+    .era-ticks {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0;
+    }
+    .era-tick {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+      gap: 4px;
+    }
+    .era-tick-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      border: 2px solid rgba(255,255,255,0.5);
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    }
+    .era-tick:hover .era-tick-dot {
+      background: rgba(255,255,255,0.6);
+      transform: scale(1.2);
+    }
+    .era-tick.active .era-tick-dot {
+      background: #4d8eff;
+      border-color: #fff;
+      transform: scale(1.3);
+      box-shadow: 0 0 8px rgba(77,142,255,0.8);
+    }
+    .era-tick-label {
       color: #aaa;
       font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
-      margin-right: 6px;
+      transition: color 0.15s;
+      margin-top: 2px;
     }
-    .era-btn {
-      padding: 6px 18px;
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 16px;
-      background: transparent;
-      color: #ccc;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-    .era-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-    .era-btn.active { background: #4d8eff; color: #fff; border-color: #4d8eff; }
-    .era-btn.all.active { background: #555; border-color: #888; }
+    .era-tick:hover .era-tick-label { color: #fff; }
+    .era-tick.active .era-tick-label { color: #fff; font-weight: 800; }
 
-    .timeline-toggle {
-      padding: 5px 14px;
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 14px;
-      background: transparent;
-      color: #ccc;
-      font-size: 12px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .timeline-toggle:hover { background: rgba(255,255,255,0.08); }
-    .timeline-toggle.active { background: #4d8eff; color: #fff; border-color: #4d8eff; }
-
-    /* 바 활성 시 지도 하단 여백 */
-    #map.timeline-on { height: calc(100% - 44px - 54px); }
+    /* 지도 하단 여백 */
+    #map { height: calc(100% - 44px - 54px); }
 
   </style>
   </style>
@@ -392,17 +426,21 @@
     <div class="search-results" id="searchResults"></div>
   </div>
 
-  <!-- 시계열 황제 버튼 바 -->
-  <div class="timeline-bar" id="timelineBar" style="display:none;">
-    <label>시계열</label>
-    <button class="era-btn" data-era="강희">강희</button>
-    <button class="era-btn" data-era="옹정">옹정</button>
-    <button class="era-btn" data-era="건륭">건륭</button>
-    <button class="era-btn" data-era="가경">가경</button>
-    <button class="era-btn" data-era="도광">도광</button>
-    <button class="era-btn all" data-era="전체">전체</button>
+  <!-- 시계열 황제 슬라이더 바 (항상 표시) -->
+  <div class="timeline-bar" id="timelineBar">
+    <div class="era-track" id="eraTrack">
+      <div class="era-track-line"></div>
+      <div class="era-track-fill" id="eraTrackFill"></div>
+      <div class="era-ticks" id="eraTicks">
+        <div class="era-tick" data-era="강희"><div class="era-tick-dot"></div><span class="era-tick-label">강희</span></div>
+        <div class="era-tick" data-era="옹정"><div class="era-tick-dot"></div><span class="era-tick-label">옹정</span></div>
+        <div class="era-tick" data-era="건륭"><div class="era-tick-dot"></div><span class="era-tick-label">건륭</span></div>
+        <div class="era-tick" data-era="가경"><div class="era-tick-dot"></div><span class="era-tick-label">가경</span></div>
+        <div class="era-tick" data-era="도광"><div class="era-tick-dot"></div><span class="era-tick-label">도광</span></div>
+        <div class="era-tick" data-era="전체"><div class="era-tick-dot"></div><span class="era-tick-label">전체</span></div>
+      </div>
+    </div>
   </div>
-  <button class="timeline-toggle" id="timelineToggle" style="position:fixed;bottom:12px;right:12px;z-index:1500;">⏱ 시계열</button>
 
   <div id="map"></div>
   <div id="infoPanel" class="info-panel hidden">
@@ -648,10 +686,9 @@
       if (!e.target.closest('#searchPanel')) searchResults.classList.remove('open');
     });
 
-    // ── 시계열 황제 버튼 ──
+    // ── 시계열 황제 슬라이더 ──
     const timelineLayers = [];
 
-    // 황제별로 표시할 레이어 time 값 매핑
     const ERA_MAP = {
       '강희': ['강희말기'],
       '옹정': ['옹정초기'],
@@ -660,69 +697,57 @@
       '도광': ['도광27년'],
     };
 
-    // 유조변 레이어: 황제별 표시 여부 (나중에 레이어 로드 후 채워짐)
-    const wpLayerMap = {};  // { '강희': layer, '옹정': layer, '건륭': layer, ... }
+    // 유조변: 강희·옹정 → kangxi, 건륭·가경·도광 → qianlong
+    const WP_ERA = {
+      '강희': 'kangxi',
+      '옹정': 'kangxi',
+      '건륭': 'qianlong',
+      '가경': 'qianlong',
+      '도광': 'qianlong',
+    };
+    const wpLayerMap = {};  // { kangxi: layer, qianlong: layer } — 레이어 로드 후 채워짐
 
-    const timelineBar    = document.getElementById('timelineBar');
-    const timelineToggle = document.getElementById('timelineToggle');
+    const ERAS = ['강희','옹정','건륭','가경','도광','전체'];
+    let currentEra = '강희';
 
     function setLayerVisible(layer, visible) {
       if (!layer) return;
-      if (layer.eachLayer) {
-        layer.eachLayer(l => {
-          const el = l.getElement ? l.getElement() : null;
-          if (el) el.style.display = visible ? '' : 'none';
-        });
+      if (typeof layer.eachLayer === 'function') {
+        layer.eachLayer(l => { const el = l.getElement?.(); if (el) el.style.display = visible ? '' : 'none'; });
       } else {
-        const el = layer.getElement ? layer.getElement() : null;
-        if (el) el.style.display = visible ? '' : 'none';
+        const el = layer.getElement?.(); if (el) el.style.display = visible ? '' : 'none';
       }
     }
 
     function applyEra(era) {
       if (era === '전체') {
-        // 모든 레이어 원래대로 복귀
         timelineLayers.forEach(({ layer }) => setLayerVisible(layer, true));
         Object.values(wpLayerMap).forEach(l => setLayerVisible(l, true));
-        return;
+      } else {
+        const activeTimes = ERA_MAP[era] || [];
+        timelineLayers.forEach(({ layer, time }) => setLayerVisible(layer, activeTimes.includes(time)));
+        // 유조변: 해당 황제에 맞는 것만 표시
+        const activeWp = WP_ERA[era];
+        Object.entries(wpLayerMap).forEach(([key, layer]) => setLayerVisible(layer, key === activeWp));
       }
-      const activeTimes = ERA_MAP[era] || [];
-      // 카룬 레이어
-      timelineLayers.forEach(({ layer, time }) => {
-        const visible = activeTimes.includes(time);
-        setLayerVisible(layer, visible);
-      });
-      // 유조변 레이어
-      Object.entries(wpLayerMap).forEach(([e, layer]) => {
-        setLayerVisible(layer, e === era);
-      });
     }
 
-    let timelineActive = false;
-    let currentEra = null;
-
-    timelineToggle.addEventListener('click', () => {
-      timelineActive = !timelineActive;
-      if (timelineActive) {
-        timelineBar.style.display = 'flex';
-        document.getElementById('map').classList.add('timeline-on');
-        timelineToggle.classList.add('active');
-      } else {
-        timelineBar.style.display = 'none';
-        document.getElementById('map').classList.remove('timeline-on');
-        timelineToggle.classList.remove('active');
-        // 버튼 활성 해제 + 레이어 전체 복귀
-        document.querySelectorAll('.era-btn').forEach(b => b.classList.remove('active'));
-        applyEra('전체');
-        currentEra = null;
+    function updateEraUI(era) {
+      const ticks = document.querySelectorAll('.era-tick');
+      ticks.forEach(t => t.classList.toggle('active', t.dataset.era === era));
+      // 채워진 진행 바 너비 계산
+      const idx = ERAS.indexOf(era);
+      const fill = document.getElementById('eraTrackFill');
+      if (fill) {
+        const pct = idx < 0 ? 100 : (idx / (ERAS.length - 1)) * 100;
+        fill.style.width = pct + '%';
       }
-    });
+    }
 
-    document.querySelectorAll('.era-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.era-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentEra = btn.dataset.era;
+    document.querySelectorAll('.era-tick').forEach(tick => {
+      tick.addEventListener('click', () => {
+        currentEra = tick.dataset.era;
+        updateEraUI(currentEra);
         applyEra(currentEra);
       });
     });
@@ -893,27 +918,6 @@
           [`${lineSvg('#d60000')}유조변(강희-옹정)`]:  wpkangxi_bundle,
           [`${lineSvg('#d60000')}유조변(건륭이후)`]:   wpqianlong_bundle
         },
-        "邊臺": {
-          [`${triSvg(dk_KX)}邊臺(강희기 이후)`]:       kx_tai
-        },
-        "강희기 카룬": {
-          [`${triSvg(tk_KX)}변외카룬(강희말기)`]:      kx_tulergi
-        },
-        "옹정기 카룬": {
-          [`${triSvg(dk_YZ)}${triSvg(tk_YZ)}변내/변외카룬(옹정초기)`]: karun_yz_bundle
-        },
-        "건륭기 카룬": {
-          [`${triSvg(dk_QL)}${triSvg(tk_QL)}변내/변외카룬(건륭중기)`]: karun_ql_bundle
-        },
-        "가경기 카룬": {
-          [`${triSvg(dk_JQ)}${triSvg(tk_JQ)}변내/변외카룬(가경 9년)`]: karun_jq_bundle
-        },
-        "가경기 위장카룬": {
-          [`${triSvg(JQWC)}성경위장 카룬(가경 23년)`]: jq_weichang
-        },
-        "도광기 카룬": {
-          [`${triSvg(dk_DG)}${triSvg(tk_DG)}변내/변외카룬(도광 27년)`]: karun_dg_bundle
-        },
         "참고자료_CHGIS (1820)": {
           [`${lineSvg('#666')}省 경계선`]: chgisprov_pgn,
           [`${lineSvg('#999')}府 경계선`]: chgispref_pgn,
@@ -979,12 +983,13 @@
         { layer: dg_tulergi,  time: '도광27년' },
       ].forEach(item => timelineLayers.push(item));
 
-      // 유조변 레이어 황제별 매핑
-      wpLayerMap['강희'] = wpkangxi_bundle;
-      wpLayerMap['옹정'] = wpkangxi_bundle;   // 강희-옹정 공용
-      wpLayerMap['건륭'] = wpqianlong_bundle;
-      wpLayerMap['가경'] = wpqianlong_bundle;
-      wpLayerMap['도광'] = wpqianlong_bundle;
+      // 유조변 레이어 매핑 (WP_ERA 키와 일치: kangxi / qianlong)
+      wpLayerMap['kangxi']   = wpkangxi_bundle;
+      wpLayerMap['qianlong'] = wpqianlong_bundle;
+
+      // ── 초기 황제 설정: 강희 ──
+      updateEraUI('강희');
+      applyEra('강희');
 
       // ── 고정 라벨 ──
       L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-sm', opacity: 0.5 })
