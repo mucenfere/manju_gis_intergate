@@ -311,99 +311,99 @@
       text-align: center;
     }
 
-    /* ── 시계열 황제 슬라이더 바 ── */
+    /* ── 시계열 슬라이더 바 ── */
     .timeline-bar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      height: 54px;
-      background: rgba(20,20,30,0.88);
-      backdrop-filter: blur(6px);
+      height: 72px;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(4px);
       z-index: 1400;
       display: flex;
       align-items: center;
-      padding: 0 32px;
-      gap: 0;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-
-    /* 눈금 트랙 영역 */
-    .era-track {
-      flex: 1;
-      position: relative;
-      height: 54px;
-      display: flex;
-      flex-direction: column;
       justify-content: center;
+      border-top: 1px solid #ddd;
     }
 
-    /* 가로 선 */
-    .era-track-line {
-      position: absolute;
-      top: 50%; left: 0; right: 0;
-      height: 3px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 2px;
-      transform: translateY(-50%);
-    }
-    .era-track-fill {
-      position: absolute;
-      top: 50%; left: 0;
-      height: 3px;
-      background: #4d8eff;
-      border-radius: 2px;
-      transform: translateY(-50%);
-      transition: width 0.2s;
-    }
-
-    /* 눈금 점들 */
-    .era-ticks {
-      position: relative;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 0;
-    }
-    .era-tick {
+    /* 중앙 컨테이너 — 폭 제한 */
+    .tl-inner {
+      width: min(680px, 90vw);
       display: flex;
       flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      position: relative;
-      z-index: 2;
       gap: 4px;
     }
-    .era-tick-dot {
-      width: 14px; height: 14px;
+
+    /* 슬라이더 행 */
+    .tl-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tl-year-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+      min-width: 38px;
+      text-align: right;
+    }
+
+    /* range input 커스텀 */
+    .tl-range {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+      background: linear-gradient(to right, #5b9cf6 0%, #5b9cf6 var(--pct,0%), #d0d0d0 var(--pct,0%), #d0d0d0 100%);
+    }
+    .tl-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.3);
-      border: 2px solid rgba(255,255,255,0.5);
-      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+      background: #fff;
+      border: 2.5px solid #5b9cf6;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      cursor: grab;
+      transition: transform 0.1s;
     }
-    .era-tick:hover .era-tick-dot {
-      background: rgba(255,255,255,0.6);
-      transform: scale(1.2);
+    .tl-range::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.15); }
+    .tl-range::-moz-range-thumb {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid #5b9cf6;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      cursor: grab;
     }
-    .era-tick.active .era-tick-dot {
-      background: #4d8eff;
-      border-color: #fff;
-      transform: scale(1.3);
-      box-shadow: 0 0 8px rgba(77,142,255,0.8);
+
+    /* 연호 행 */
+    .tl-eras {
+      display: flex;
+      position: relative;
+      height: 22px;
+      margin: 0 2px;
     }
-    .era-tick-label {
-      color: #aaa;
-      font-size: 12px;
+    .tl-era-chip {
+      position: absolute;
+      transform: translateX(-50%);
+      font-size: 11px;
       font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      padding: 1px 5px;
+      border-radius: 3px;
       white-space: nowrap;
-      transition: color 0.15s;
-      margin-top: 2px;
+      transition: color 0.15s, background 0.15s;
+      line-height: 20px;
     }
-    .era-tick:hover .era-tick-label { color: #fff; }
-    .era-tick.active .era-tick-label { color: #fff; font-weight: 800; }
+    .tl-era-chip:hover { color: #333; background: #eef2ff; }
+    .tl-era-chip.active { color: #3a7bef; font-weight: 800; background: #dce9ff; }
 
     /* 지도 하단 여백 */
-    #map { height: calc(100% - 44px - 54px); }
+    #map { height: calc(100% - 44px - 72px); }
 
-  </style>
   </style>
 </head>
 
@@ -426,18 +426,15 @@
     <div class="search-results" id="searchResults"></div>
   </div>
 
-  <!-- 시계열 황제 슬라이더 바 (항상 표시) -->
+  <!-- 시계열 슬라이더 바 -->
   <div class="timeline-bar" id="timelineBar">
-    <div class="era-track" id="eraTrack">
-      <div class="era-track-line"></div>
-      <div class="era-track-fill" id="eraTrackFill"></div>
-      <div class="era-ticks" id="eraTicks">
-        <div class="era-tick" data-era="강희"><div class="era-tick-dot"></div><span class="era-tick-label">강희</span></div>
-        <div class="era-tick" data-era="옹정"><div class="era-tick-dot"></div><span class="era-tick-label">옹정</span></div>
-        <div class="era-tick" data-era="건륭"><div class="era-tick-dot"></div><span class="era-tick-label">건륭</span></div>
-        <div class="era-tick" data-era="가경"><div class="era-tick-dot"></div><span class="era-tick-label">가경</span></div>
-        <div class="era-tick" data-era="도광"><div class="era-tick-dot"></div><span class="era-tick-label">도광</span></div>
-        <div class="era-tick" data-era="전체"><div class="era-tick-dot"></div><span class="era-tick-label">전체</span></div>
+    <div class="tl-inner">
+      <div class="tl-slider-row">
+        <span class="tl-year-label" id="tlYearLabel">1661</span>
+        <input type="range" class="tl-range" id="tlRange" min="1644" max="1850" value="1661" step="1" />
+      </div>
+      <div class="tl-eras" id="tlEras">
+        <!-- 연호 칩은 JS로 동적 생성 -->
       </div>
     </div>
   </div>
@@ -686,71 +683,129 @@
       if (!e.target.closest('#searchPanel')) searchResults.classList.remove('open');
     });
 
-    // ── 시계열 황제 슬라이더 ──
+    // ── 시계열 연도 슬라이더 ──
     const timelineLayers = [];
+    const wpLayerMap = {};  // { kangxi: layer, qianlong: layer }
 
-    const ERA_MAP = {
-      '강희': ['강희말기'],
-      '옹정': ['옹정초기'],
-      '건륭': ['건륭중기'],
-      '가경': ['가경9년', '가경23년'],
-      '도광': ['도광27년'],
+    // 연도 범위: 1644(입관) ~ 1850(도광 말기)
+    const TL_MIN = 1644, TL_MAX = 1850;
+
+    // 연호 정의: { name, start, end, wpKey }
+    const ERA_DEFS = [
+      { name: '순치', start: 1644, end: 1661, wpKey: null },
+      { name: '강희', start: 1661, end: 1722, wpKey: 'kangxi' },
+      { name: '옹정', start: 1722, end: 1735, wpKey: 'kangxi' },
+      { name: '건륭', start: 1735, end: 1796, wpKey: 'qianlong' },
+      { name: '가경', start: 1796, end: 1820, wpKey: 'qianlong' },
+      { name: '도광', start: 1820, end: 1850, wpKey: 'qianlong' },
+    ];
+
+    // 연도 → 연호 이름
+    function yearToEra(year) {
+      for (let i = ERA_DEFS.length - 1; i >= 0; i--) {
+        if (year >= ERA_DEFS[i].start) return ERA_DEFS[i].name;
+      }
+      return ERA_DEFS[0].name;
+    }
+
+    // 연도 → 해당 시점에 표시할 timelineLayers의 time 키 목록
+    // time 키와 연도 대응
+    const TIME_YEAR = {
+      '강희말기': 1700,  // 강희 중반 이후
+      '옹정초기': 1722,
+      '건륭중기': 1760,
+      '가경9년':  1804,
+      '가경23년': 1818,
+      '도광27년': 1847,
     };
 
-    // 유조변: 강희·옹정 → kangxi, 건륭·가경·도광 → qianlong
-    const WP_ERA = {
-      '강희': 'kangxi',
-      '옹정': 'kangxi',
-      '건륭': 'qianlong',
-      '가경': 'qianlong',
-      '도광': 'qianlong',
-    };
-    const wpLayerMap = {};  // { kangxi: layer, qianlong: layer } — 레이어 로드 후 채워짐
+    function getActiveTimesForYear(year) {
+      // 해당 연도 이하에서 가장 최근 time 키들 — 연호 경계마다 1개
+      // 전략: 같은 연호 내 여러 time이 있으면 해당 연호에서 year 이하인 것 중 최신 1개
+      const byEra = {};
+      for (const [t, y] of Object.entries(TIME_YEAR)) {
+        const era = yearToEra(y);
+        if (!byEra[era] || y > byEra[era].y) byEra[era] = { t, y };
+      }
+      // 현재 연도의 연호까지 포함된 time들
+      const currentEra = yearToEra(year);
+      const result = [];
+      for (const [era, { t, y }] of Object.entries(byEra)) {
+        const eraDef = ERA_DEFS.find(e => e.name === era);
+        if (eraDef && eraDef.start <= year && y <= year) result.push(t);
+      }
+      return result;
+    }
 
-    const ERAS = ['강희','옹정','건륭','가경','도광','전체'];
-    let currentEra = '강희';
-
+    // ── 레이어 가시성 토글 (버그 수정: addTo/remove 방식 사용) ──
     function setLayerVisible(layer, visible) {
       if (!layer) return;
-      if (typeof layer.eachLayer === 'function') {
-        layer.eachLayer(l => { const el = l.getElement?.(); if (el) el.style.display = visible ? '' : 'none'; });
+      if (visible) {
+        if (!map.hasLayer(layer)) layer.addTo(map);
       } else {
-        const el = layer.getElement?.(); if (el) el.style.display = visible ? '' : 'none';
+        if (map.hasLayer(layer)) map.removeLayer(layer);
       }
     }
 
-    function applyEra(era) {
-      if (era === '전체') {
-        timelineLayers.forEach(({ layer }) => setLayerVisible(layer, true));
-        Object.values(wpLayerMap).forEach(l => setLayerVisible(l, true));
-      } else {
-        const activeTimes = ERA_MAP[era] || [];
-        timelineLayers.forEach(({ layer, time }) => setLayerVisible(layer, activeTimes.includes(time)));
-        // 유조변: 해당 황제에 맞는 것만 표시
-        const activeWp = WP_ERA[era];
-        Object.entries(wpLayerMap).forEach(([key, layer]) => setLayerVisible(layer, key === activeWp));
-      }
-    }
-
-    function updateEraUI(era) {
-      const ticks = document.querySelectorAll('.era-tick');
-      ticks.forEach(t => t.classList.toggle('active', t.dataset.era === era));
-      // 채워진 진행 바 너비 계산
-      const idx = ERAS.indexOf(era);
-      const fill = document.getElementById('eraTrackFill');
-      if (fill) {
-        const pct = idx < 0 ? 100 : (idx / (ERAS.length - 1)) * 100;
-        fill.style.width = pct + '%';
-      }
-    }
-
-    document.querySelectorAll('.era-tick').forEach(tick => {
-      tick.addEventListener('click', () => {
-        currentEra = tick.dataset.era;
-        updateEraUI(currentEra);
-        applyEra(currentEra);
+    function applyYear(year) {
+      const activeTimes = getActiveTimesForYear(year);
+      timelineLayers.forEach(({ layer, time }) => {
+        setLayerVisible(layer, activeTimes.includes(time));
       });
-    });
+      // 유조변: 현재 연호의 wpKey
+      const era = yearToEra(year);
+      const eraDef = ERA_DEFS.find(e => e.name === era);
+      const activeWp = eraDef?.wpKey || null;
+      Object.entries(wpLayerMap).forEach(([key, layer]) => {
+        setLayerVisible(layer, key === activeWp);
+      });
+    }
+
+    // ── UI: 연호 칩 생성 ──
+    function buildEraChips() {
+      const container = document.getElementById('tlEras');
+      if (!container) return;
+      const range = TL_MAX - TL_MIN;
+      ERA_DEFS.forEach(era => {
+        const midYear = (era.start + Math.min(era.end, TL_MAX)) / 2;
+        const pct = ((midYear - TL_MIN) / range) * 100;
+        const chip = document.createElement('span');
+        chip.className = 'tl-era-chip';
+        chip.dataset.era = era.name;
+        chip.dataset.year = era.start;
+        chip.textContent = era.name;
+        chip.style.left = pct + '%';
+        chip.addEventListener('click', () => {
+          setSliderYear(era.start);
+        });
+        container.appendChild(chip);
+      });
+    }
+
+    // ── UI: 슬라이더 값 업데이트 ──
+    function setSliderYear(year) {
+      const slider = document.getElementById('tlRange');
+      const label  = document.getElementById('tlYearLabel');
+      if (slider) slider.value = year;
+      if (label)  label.textContent = year;
+      // 슬라이더 채워진 배경 비율
+      const pct = ((year - TL_MIN) / (TL_MAX - TL_MIN)) * 100;
+      if (slider) slider.style.setProperty('--pct', pct + '%');
+      // 연호 칩 활성 표시
+      const currentEra = yearToEra(year);
+      document.querySelectorAll('.tl-era-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.era === currentEra);
+      });
+      applyYear(year);
+    }
+
+    // 슬라이더 이벤트
+    const tlRange = document.getElementById('tlRange');
+    if (tlRange) {
+      tlRange.addEventListener('input', () => setSliderYear(Number(tlRange.value)));
+    }
+
+    buildEraChips();
 
     (async () => {
 
@@ -987,9 +1042,8 @@
       wpLayerMap['kangxi']   = wpkangxi_bundle;
       wpLayerMap['qianlong'] = wpqianlong_bundle;
 
-      // ── 초기 황제 설정: 강희 ──
-      updateEraUI('강희');
-      applyEra('강희');
+      // ── 초기 연도: 강희 원년(1661) ──
+      setSliderYear(1661);
 
       // ── 고정 라벨 ──
       L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-sm', opacity: 0.5 })
