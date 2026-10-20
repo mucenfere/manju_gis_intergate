@@ -381,31 +381,33 @@
       cursor: grab;
     }
 
-    /* 눈금 컨테이너 (슬라이더 아래 겹쳐서 배치) */
-    .tl-ticks {
+    /* 눈금·연호 공통: thumb 반경(9px)만큼 양쪽 패딩으로 슬라이더 트랙과 정렬 */
+    .tl-ticks,
+    .tl-eras {
       position: relative;
-      height: 10px;
-      margin-top: 2px;
+      padding: 0 9px;   /* thumb radius 보정 */
+      box-sizing: border-box;
       pointer-events: none;
+    }
+
+    /* 눈금 컨테이너 */
+    .tl-ticks {
+      height: 8px;
+      margin-top: 3px;
     }
     .tl-tick {
       position: absolute;
       top: 0;
       transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0;
     }
     .tl-tick-line {
       width: 1px;
-      height: 5px;
+      height: 6px;
       background: #bbb;
     }
 
     /* 연호 행 */
     .tl-eras {
-      position: relative;
       height: 18px;
       margin-top: 1px;
     }
@@ -426,8 +428,8 @@
     .tl-era-chip:hover { color: #333; background: #eef2ff; }
     .tl-era-chip.active { color: #3a7bef; font-weight: 800; background: #dce9ff; }
 
-    /* 지도 하단 여백 — 바가 float이므로 충분한 여백만 */
-    #map { height: calc(100% - 44px - 60px); }
+    /* 지도 하단 여백 — 슬라이더 바는 float 카드이므로 상단 nav 높이만 */
+    #map { height: calc(100% - 44px); }
 
   </style>
 </head>
@@ -732,14 +734,15 @@
       return ERA_DEFS[0].name;
     }
 
-    // 연호별 표시할 time 키 목록 (ERA_MAP과 동일하지만 연도 기반으로 처리)
+    // 연호별 표시할 time 키 목록
+    // 가경23년 위장카룬은 도광연간에도 유지
     const ERA_TIMES = {
       '순치': [],
       '강희': ['강희말기'],
       '옹정': ['옹정초기'],
       '건륭': ['건륭중기'],
       '가경': ['가경9년', '가경23년'],
-      '도광': ['도광27년'],
+      '도광': ['도광27년', '가경23년'],
     };
 
     function getActiveTimesForYear(year) {
@@ -772,16 +775,24 @@
     }
 
     // ── UI: 눈금 + 연호 칩 생성 ──
+    // CSS padding:9px 보정으로 sliderTrack 기준 left 계산:
+    //   실제 트랙 폭 = 컨테이너 - 18px(양쪽 9px)
+    //   left = 9px + (year - MIN) / (MAX - MIN) * (컨테이너 - 18px)
+    //   → padding을 주었으므로 left를 %로 줄 때 패딩 안쪽 기준으로:
+    //   left = (year - MIN) / (MAX - MIN) * 100%  (패딩 안쪽 좌표계)
+    function yearPct(year) {
+      return ((year - TL_MIN) / (TL_MAX - TL_MIN)) * 100;
+    }
+
     function buildEraChips() {
       const chipContainer = document.getElementById('tlEras');
       const tickContainer = document.getElementById('tlTicks');
       if (!chipContainer) return;
-      const range = TL_MAX - TL_MIN;
 
       ERA_DEFS.forEach(era => {
-        // 연호 중간에 칩 배치
-        const midYear = (era.start + Math.min(era.end, TL_MAX)) / 2;
-        const midPct  = ((midYear - TL_MIN) / range) * 100;
+        // 칩: 즉위년~사망년 정확한 중앙
+        const endYear = Math.min(era.end, TL_MAX);
+        const midPct  = yearPct((era.start + endYear) / 2);
 
         const chip = document.createElement('span');
         chip.className = 'tl-era-chip';
@@ -791,24 +802,24 @@
         chip.addEventListener('click', () => setSliderYear(era.start));
         chipContainer.appendChild(chip);
 
-        // 즉위년 눈금 (시작 경계)
+        // 즉위년 눈금
         if (tickContainer) {
-          const startPct = ((era.start - TL_MIN) / range) * 100;
           const tick = document.createElement('div');
           tick.className = 'tl-tick';
-          tick.style.left = startPct + '%';
+          tick.style.left = yearPct(era.start) + '%';
           tick.innerHTML = `<div class="tl-tick-line"></div>`;
-          tick.title = `${era.name} ${era.start}년`;
+          tick.title = `${era.name} 즉위 ${era.start}년`;
           tickContainer.appendChild(tick);
         }
       });
 
-      // 마지막 경계 눈금 (1850)
+      // 마지막 눈금 (1850)
       if (tickContainer) {
         const endTick = document.createElement('div');
         endTick.className = 'tl-tick';
         endTick.style.left = '100%';
         endTick.innerHTML = `<div class="tl-tick-line"></div>`;
+        endTick.title = '1850년';
         tickContainer.appendChild(endTick);
       }
     }
