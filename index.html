@@ -427,6 +427,23 @@
     }
     .tl-era-chip:hover { color: #333; background: #eef2ff; }
     .tl-era-chip.active { color: #3a7bef; font-weight: 800; background: #dce9ff; }
+    .tl-all-btn {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      color: #666;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 3px 9px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+      align-self: center;
+      margin-left: 10px;
+    }
+    .tl-all-btn:hover { background: #e0e8ff; color: #3a7bef; border-color: #aac4ff; }
+    .tl-all-btn.active { background: #dce9ff; color: #3a7bef; border-color: #5b9cf6; font-weight: 800; }
 
     /* 지도 하단 여백 — 슬라이더 바는 float 카드이므로 상단 nav 높이만 */
     #map { height: calc(100% - 44px); }
@@ -461,6 +478,7 @@
         <input type="range" class="tl-range" id="tlRange" min="1644" max="1850" value="1661" step="1" />
         <div class="tl-ticks" id="tlTicks"><!-- JS로 생성 --></div>
       </div>
+      <button class="tl-all-btn" id="tlAllBtn">전체</button>
     </div>
     <div class="tl-eras" id="tlEras"><!-- JS로 생성 --></div>
   </div>
@@ -831,6 +849,7 @@
 
     // ── UI: 슬라이더 값 업데이트 ──
     function setSliderYear(year) {
+      document.getElementById('tlAllBtn')?.classList.remove('active');
       const slider = document.getElementById('tlRange');
       const label  = document.getElementById('tlYearLabel');
       if (slider) slider.value = year;
@@ -853,6 +872,16 @@
     }
 
     buildEraChips();
+
+    const tlAllBtn = document.getElementById('tlAllBtn');
+    if (tlAllBtn) {
+      tlAllBtn.addEventListener('click', () => {
+        document.querySelectorAll('.tl-era-chip').forEach(c => c.classList.remove('active'));
+        tlAllBtn.classList.add('active');
+        timelineLayers.forEach(({ layer }) => setLayerVisible(layer, true));
+        Object.values(wpLayerMap).forEach(l => setLayerVisible(l, true));
+      });
+    }
 
     (async () => {
 
