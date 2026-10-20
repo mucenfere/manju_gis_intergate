@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YWD860LFFR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-YWD860LFFR');
+</script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mukden's Karun map</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier-Leaflet/0.2.6/oms.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-groupedlayercontrol/0.6.1/leaflet.groupedlayercontrol.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-groupedlayercontrol/0.6.1/leaflet.groupedlayercontrol.min.js"></script>
+
+  <link rel="stylesheet" href="./css/site.css" />
+
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+
+    /* Top nav */
+    .topnav{
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 44px;
+      display: flex;
+      gap: 48px;
+      align-items: center;
+      padding: 0 80px;
+      background: rgba(255,255,255,0.95);
+      z-index: 1000;
+      border-bottom: 1px solid #ddd;
+    }
+    .topnav a{ text-decoration:none; color:#111; font-weight:600; }
+
+    .admin-dot{
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #004eff;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .tri {
+      width: 14px;
+      height: 14px;
+      background: var(--tri, #d62728);
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      border: 1.5px solid rgba(255,255,255,0.9);
+      box-sizing: border-box;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+    }
+
+    #map{
+      width: 100%;
+      height: calc(100% - 44px);
+      margin-top: 44px;
+    }
+
+    .leaflet-tooltip.plain-label{
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      margin: 0;
+      color: #000;
+      font-size: 13px;
+      font-weight: 600;
+      text-shadow: 0 0 2px #fff, 0 0 2px #fff;
+    }
+    .leaflet-tooltip.plain-label:before{ display: none !important; }
+
+    .labels-hidden .leaflet-tooltip.plain-label { display: none !important; }
+
+    .leaflet-control-layers{
+      max-height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+    .leaflet-control-layers-overlays{
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 6px;
+    }
+    .leaflet-control-layers {
+      max-height: calc(100vh - 60px);
+      overflow: hidden;
+      min-width: 200px;
+    }
+
+    .leaflet-control-layers-group-label {
+      padding-left: 0 !important;
+    }
+    .leaflet-control-layers-group label:not(.leaflet-control-layers-group-label) {
+      padding-left: 16px;
+      display: block;
+    }
+    .leaflet-control-layers-group-name {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      margin-top: 10px;
+      margin-bottom: 6px;
+      padding-left: 0;
+    }
+
+    .legend-tri {
+      display: inline-block;
+      width: 10px; height: 10px;
+      vertical-align: middle;
+      margin-right: 5px;
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      flex-shrink: 0;
+    }
+    .legend-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 5px;
+      flex-shrink: 0;
+    }
+    .legend-line {
+      display: inline-block;
+      width: 18px; height: 3px;
+      vertical-align: middle;
+      margin-right: 5px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .leaflet-control-layers-overlays label span,
+    .leaflet-control-layers-overlays label {
+      display: flex !important;
+      align-items: center;
+    }
+
+    .label-toggle-btn {
+      display: block;
+      width: 100%;
+      background: #f0f0ee;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 5px 10px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #333;
+      line-height: 1.4;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .label-toggle-btn:hover { background: #e4e4e0; }
+    .label-toggle-btn.off { background: #fff; color: #aaa; border-color: #ddd; }
+
+    /* ── 고정 라벨 (라벨 토글 무관) ── */
+    .leaflet-tooltip.fixed-label {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 800;
+      white-space: nowrap;
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.8),
+         1px -1px 0 rgba(0,0,0,0.8),
+        -1px  1px 0 rgba(0,0,0,0.8),
+         1px  1px 0 rgba(0,0,0,0.8);
+    }
+    .leaflet-tooltip.fixed-label:before { display: none !important; }
+
+    .leaflet-tooltip.fixed-label-sm {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
+      text-align: center;
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.6),
+         1px -1px 0 rgba(0,0,0,0.6),
+        -1px  1px 0 rgba(0,0,0,0.6),
+         1px  1px 0 rgba(0,0,0,0.6);
+    }
+    .leaflet-tooltip.fixed-label-sm:before { display: none !important; }
+
+    .leaflet-tooltip.fixed-label-wrap {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 600;
+      white-space: pre;
+      text-align: center;
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.6),
+         1px -1px 0 rgba(0,0,0,0.6),
+        -1px  1px 0 rgba(0,0,0,0.6),
+         1px  1px 0 rgba(0,0,0,0.6);
+    }
+    .leaflet-tooltip.fixed-label-wrap:before { display: none !important; }
+
+    /* info panel */
+    .info-panel{
+      position: fixed;
+      top: 44px; left: 0; right: auto;
+      width: 360px;
+      height: calc(100vh - 44px);
+      background: rgba(255,255,255,0.98);
+      border-right: 1px solid #ddd;
+      border-left: none;
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 6px 0 20px rgba(0,0,0,0.08);
+    }
+    .info-panel.hidden{ display:none; }
+    .info-head{
+      display:flex; align-items:center; justify-content: space-between;
+      padding: 10px 12px; border-bottom: 1px solid #eee;
+    }
+    .info-title{ font-weight: 800; }
+    .info-close{
+      font-size: 22px; line-height: 22px;
+      border: none; background: transparent; cursor: pointer;
+    }
+    .info-body{
+      padding: 10px 12px; overflow: auto; font-size: 15px;
+    }
+    .info-body table{ width:100%; border-collapse: collapse; }
+    .info-body th{ text-align:left; padding:4px 8px 4px 0; white-space:nowrap; vertical-align: top; }
+    .info-body td{ padding:4px 0; word-break: break-word; }
+
+    .marker-selected-png {
+      filter: drop-shadow(0 0 4px #00ffff) drop-shadow(0 0 8px #00ffff) drop-shadow(0 0 12px #00ffff) drop-shadow(0 0 16px #00ffff) !important;
+      transform: scale(1.2); transform-origin: center;
+    }
+    .marker-selected-div > div { transform: scale(1.2); transform-origin: center; }
+    .marker-selected-div .admin-dot { background: #00ffff !important; width: 10px !important; height: 10px !important; }
+    .marker-selected-div .tri { --tri: #00ffff !important; width: 14px !important; height: 14px !important; }
+
+    /* ── 검색 패널 ── */
+    .search-panel {
+      position: fixed;
+      top: 54px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 1500;
+      width: 340px;
+    }
+    .search-input-wrap {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      padding: 6px 14px;
+      gap: 8px;
+    }
+    .search-input-wrap input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      background: transparent;
+      color: #111;
+    }
+    .search-input-wrap input::placeholder { color: #aaa; }
+    .search-clear {
+      border: none; background: none;
+      color: #aaa; font-size: 16px;
+      cursor: pointer; padding: 0; line-height: 1;
+    }
+    .search-clear:hover { color: #555; }
+    .search-results {
+      margin-top: 6px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      max-height: 280px;
+      overflow-y: auto;
+      display: none;
+    }
+    .search-results.open { display: block; }
+    .search-result-item {
+      padding: 9px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0ee;
+      line-height: 1.4;
+    }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: #e8f0fe; }
+    .search-result-item .res-name { font-weight: 700; color: #111; }
+    .search-result-item .res-sub  { font-size: 11px; color: #888; margin-top: 1px; }
+    .search-empty {
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #aaa;
+      text-align: center;
+    }
+
+    /* ── 시계열 슬라이더 ── */
+    .timeline-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 64px;
+      background: rgba(20,20,30,0.88);
+      backdrop-filter: blur(6px);
+      z-index: 1400;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 18px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .timeline-bar label {
+      color: #ccc;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+    }
+    .timeline-year {
+      color: #fff;
+      font-size: 20px;
+      font-weight: 800;
+      min-width: 52px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .timeline-bar input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: linear-gradient(to right, #4d8eff 0%, #4d8eff var(--pct,0%), rgba(255,255,255,0.2) var(--pct,0%), rgba(255,255,255,0.2) 100%);
+      outline: none;
+      cursor: pointer;
+    }
+    .timeline-bar input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 6px rgba(0,0,0,0.4);
+      cursor: pointer;
+    }
+    .timeline-bar input[type=range]::-moz-range-thumb {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+      box-shadow: 0 0 6px rgba(0,0,0,0.4);
+    }
+    .timeline-toggle {
+      padding: 5px 14px;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 14px;
+      background: transparent;
+      color: #ccc;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .timeline-toggle:hover { background: rgba(255,255,255,0.08); }
+    .timeline-toggle.active { background: #4d8eff; color: #fff; border-color: #4d8eff; }
+
+    /* 슬라이더 활성 시 지도 하단 여백 */
+    #map.timeline-on { height: calc(100% - 44px - 64px); }
+
+  </style>
+  </style>
+</head>
+
+<body>
+  <nav class="topnav">
+    <a href="https://mucenfere.github.io/">Home</a>
+    <a href="./index.html">Map</a>
+    <a href="./gazetteer.html">Gazetteer</a>
+    <a href="./reference.html">Reference</a>
+    <a href="./worklog.html">Work Log</a>
+  </nav>
+
+  <!-- 검색 패널 -->
+  <div class="search-panel" id="searchPanel">
+    <div class="search-input-wrap">
+      <span>🔍</span>
+      <input type="text" id="searchBox" placeholder="지명 검색 (한자·만주어·유형…)" autocomplete="off" />
+      <button class="search-clear" id="searchClear" title="지우기">✕</button>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
+  <!-- 시계열 슬라이더 -->
+  <div class="timeline-bar" id="timelineBar" style="display:none;">
+    <label>시계열</label>
+    <span class="timeline-year" id="timelineYear">1700</span>
+    <input type="range" id="timelineSlider" min="1583" max="1911" value="1700" step="1" />
+    <label style="font-size:11px;color:#666;">1583</label>
+    <label style="font-size:11px;color:#666;">1911</label>
+  </div>
+  <button class="timeline-toggle" id="timelineToggle" style="position:fixed;bottom:12px;right:12px;z-index:1500;">⏱ 시계열</button>
+
+  <div id="map"></div>
+  <div id="infoPanel" class="info-panel hidden">
+    <div class="info-head">
+      <div id="infoTitle" class="info-title">정보</div>
+      <button id="infoClose" class="info-close" type="button">×</button>
+    </div>
+    <div id="infoBody" class="info-body"></div>
+  </div>
+
+  <script>
+    const map = L.map('map').setView([42, 126], 7);
+    map.on('click', (e) => {
+      if (e.originalEvent._stopped) return;
+      highlightLayer(null);
+      closeInfoPanel();
+    });
+
+    const mkDivIcon = (className, size) => L.divIcon({
+      className: '',
+      html: `<div class="${className}"></div>`,
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2],
+      popupAnchor: [0, -size/2]
+    });
+
+    const oms = new OverlappingMarkerSpiderfier(map, {
+      keepSpiderfied: true,
+      nearbyDistance: 20,
+      legWeight: 1.2
+    });
+
+    const icon_admin = mkDivIcon('admin-dot', 10);
+
+    const panel = document.getElementById('infoPanel');
+    L.DomEvent.disableClickPropagation(panel);
+    L.DomEvent.disableScrollPropagation(panel);
+    const infoTitleEl = document.getElementById('infoTitle');
+    const infoBodyEl  = document.getElementById('infoBody');
+    const infoCloseEl = document.getElementById('infoClose');
+
+    function escapeHtml(s){
+      return String(s ?? '').replace(/[&<>"']/g, (m)=>({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+      }[m]));
+    }
+
+    let selectedLayer = null;
+    let selectedOriginalStyle = null;
+
+    function highlightLayer(layer) {
+      if (selectedLayer) {
+        if (selectedOriginalStyle) {
+          selectedLayer.setStyle(selectedOriginalStyle);
+          selectedOriginalStyle = null;
+        }
+        if (selectedLayer._selectedEl) {
+          selectedLayer._selectedEl.classList.remove('marker-selected-png', 'marker-selected-div');
+          selectedLayer._selectedEl = null;
+        }
+        selectedLayer = null;
+      }
+      if (!layer) return;
+      selectedLayer = layer;
+      if (layer instanceof L.Marker) {
+        const el = layer.getElement();
+        if (!el) return;
+        const isPng = layer.options?.icon instanceof L.Icon && !(layer.options?.icon instanceof L.DivIcon);
+        const cls = isPng ? 'marker-selected-png' : 'marker-selected-div';
+        el.classList.add(cls);
+        layer._selectedEl = el;
+        return;
+      }
+      if (layer instanceof L.CircleMarker) {
+        selectedOriginalStyle = {
+          color: layer.options.color, weight: layer.options.weight,
+          fillColor: layer.options.fillColor, fillOpacity: layer.options.fillOpacity,
+          radius: layer.options.radius,
+        };
+        layer.setStyle({ color: '#00ffff', fillColor: '#00ffff', fillOpacity: 1, weight: 2 });
+        layer.setRadius(4); return;
+      }
+      if (layer instanceof L.Path) {
+        selectedOriginalStyle = {
+          color: layer.options.color, weight: layer.options.weight,
+          opacity: layer.options.opacity, fillOpacity: layer.options.fillOpacity,
+        };
+        layer.setStyle({ color: '#00ffff', weight: 5, opacity: 1, fillOpacity: 0.5 });
+        layer.bringToFront();
+      }
+    }
+
+    function openInfoPanel(title, props){
+      infoTitleEl.textContent = title || '정보';
+      const rows = Object.entries(props || {})
+        .map(([k,v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(v)}</td></tr>`)
+        .join('');
+      infoBodyEl.innerHTML = `<table>${rows}</table>`;
+      panel.classList.remove('hidden');
+    }
+    function closeInfoPanel(){ panel.classList.add('hidden'); }
+    if (infoCloseEl) infoCloseEl.addEventListener('click', closeInfoPanel);
+
+    // ── Basemaps ──
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+    });
+    const satellite = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19, attribution: '&copy; Esri' }
+    );
+    const labels = L.tileLayer(
+      'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19, attribution: '&copy; Esri', opacity: 0.5 }
+    );
+    satellite.addTo(map);
+    const baseLayers = { "위성": satellite, "OSM": osm };
+
+    const willowpalisade = { color: '#d60000', weight: 2, opacity: 1 };
+
+    async function loadGeoJSON(url, options = {}) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch ${url} (HTTP ${res.status})`);
+      const gj = await res.json();
+      return L.geoJSON(gj, {
+        style: options.style,
+        pointToLayer: options.pointToLayer,
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties || {};
+          const labelText = p.name_chf || p.name || p.NAME_FT || '정보';
+          if (options.label === true) {
+            layer.bindTooltip(labelText, {
+              permanent: true, direction: 'top', offset: [0, -6],
+              opacity: 1, className: 'plain-label'
+            });
+          }
+          layer.on('click', (e) => {
+            L.DomEvent.stopPropagation(e);
+            highlightLayer(layer);
+            openInfoPanel(labelText, p);
+          });
+        }
+      });
+    }
+
+    // ── 라벨 전체 토글 ──
+    let labelsVisible = false;
+    function insertLabelToggle() {
+      const layerBox = document.querySelector('.leaflet-control-layers');
+      if (!layerBox) return;
+      if (layerBox.querySelector('.label-toggle-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'label-toggle-btn off';
+      btn.textContent = '🏷 라벨 OFF';
+      btn.addEventListener('click', () => {
+        labelsVisible = !labelsVisible;
+        if (labelsVisible) {
+          map.getContainer().classList.remove('labels-hidden');
+          btn.textContent = '🏷 라벨 ON';
+          btn.classList.remove('off');
+        } else {
+          map.getContainer().classList.add('labels-hidden');
+          btn.textContent = '🏷 라벨 OFF';
+          btn.classList.add('off');
+        }
+      });
+      layerBox.insertBefore(btn, layerBox.firstChild);
+    }
+
+    // ── 범례 아이콘 헬퍼 ──
+    function triSvg(color) {
+      return `<span class="legend-tri" style="background:${color};"></span>`;
+    }
+    function dotSvg(color) {
+      return `<span class="legend-dot" style="background:${color};"></span>`;
+    }
+    function lineSvg(color) {
+      return `<span class="legend-line" style="background:${color};"></span>`;
+    }
+
+    // ── 검색 인덱스 ──
+    const searchIndex = [];
+
+    function buildSearchIndex(leafletLayer, zone) {
+      leafletLayer.eachLayer(layer => {
+        const p = layer.feature?.properties || {};
+        const name = p.name_chf || p.name || p.NAME_FT || '';
+        const ma   = p.name_ma  || p.manchu || '';
+        if (!name && !ma) return;
+        const latlng = layer.getLatLng ? layer.getLatLng() : null;
+        searchIndex.push({ name, ma, zone, latlng, layer });
+      });
+    }
+
+    // ── 검색 UI ──
+    const searchBox     = document.getElementById('searchBox');
+    const searchResults = document.getElementById('searchResults');
+    const searchClear   = document.getElementById('searchClear');
+
+    function doSearch(q) {
+      q = q.trim();
+      searchResults.innerHTML = '';
+      if (!q) { searchResults.classList.remove('open'); return; }
+      const ql = q.toLowerCase();
+      const hits = searchIndex.filter(it =>
+        it.name.toLowerCase().includes(ql) ||
+        it.ma.toLowerCase().includes(ql) ||
+        it.zone.toLowerCase().includes(ql)
+      ).slice(0, 30);
+      if (!hits.length) {
+        searchResults.innerHTML = `<div class="search-empty">검색 결과 없음</div>`;
+        searchResults.classList.add('open');
+        return;
+      }
+      hits.forEach(it => {
+        const div = document.createElement('div');
+        div.className = 'search-result-item';
+        div.innerHTML = `<div class="res-name">${escapeHtml(it.name || it.ma)}</div>`
+          + `<div class="res-sub">${escapeHtml(it.zone)}${it.ma ? ' · ' + escapeHtml(it.ma) : ''}</div>`;
+        div.addEventListener('click', () => {
+          searchResults.classList.remove('open');
+          searchBox.value = '';
+          if (it.latlng) {
+            map.flyTo(it.latlng, Math.max(map.getZoom(), 10), { duration: 0.8 });
+          }
+          if (it.layer) {
+            highlightLayer(it.layer);
+            const p = it.layer.feature?.properties || {};
+            openInfoPanel(it.name || it.ma || '정보', p);
+          } else {
+            openInfoPanel(it.name || it.ma || '정보', { 유형: it.zone, 만주어: it.ma });
+          }
+        });
+        searchResults.appendChild(div);
+      });
+      searchResults.classList.add('open');
+    }
+
+    searchBox.addEventListener('input', () => doSearch(searchBox.value));
+    searchBox.addEventListener('keydown', e => { if (e.key === 'Escape') { searchResults.classList.remove('open'); searchBox.value = ''; } });
+    searchClear.addEventListener('click', () => { searchBox.value = ''; searchResults.classList.remove('open'); });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#searchPanel')) searchResults.classList.remove('open');
+    });
+
+    // ── 시계열 슬라이더 ──
+    const timelineLayers = [];
+    const TIME_RANGE = {
+      '강희45년': [1706,1706], '강희51년': [1712,1712],
+      '강희52년': [1713,1713], '강희60년': [1721,1721],
+      '강희말기': [1700,1722], '옹정초기': [1723,1735],
+      '건륭중기': [1736,1795], '가경9년':  [1804,1804],
+      '가경23년': [1818,1818], '도광27년': [1847,1847],
+    };
+
+    const timelineBar    = document.getElementById('timelineBar');
+    const timelineSlider = document.getElementById('timelineSlider');
+    const timelineYear   = document.getElementById('timelineYear');
+    const timelineToggle = document.getElementById('timelineToggle');
+
+    function applyTimeline(year) {
+      timelineLayers.forEach(({ layer, time }) => {
+        const range = TIME_RANGE[time];
+        if (!range) return;
+        const visible = year >= range[0] && year <= range[1];
+        layer.eachLayer(l => {
+          const el = l.getElement ? l.getElement() : null;
+          if (el) el.style.display = visible ? '' : 'none';
+        });
+      });
+    }
+
+    let timelineActive = false;
+    timelineToggle.addEventListener('click', () => {
+      timelineActive = !timelineActive;
+      if (timelineActive) {
+        timelineBar.style.display = 'flex';
+        document.getElementById('map').classList.add('timeline-on');
+        timelineToggle.classList.add('active');
+        applyTimeline(parseInt(timelineSlider.value));
+      } else {
+        timelineBar.style.display = 'none';
+        document.getElementById('map').classList.remove('timeline-on');
+        timelineToggle.classList.remove('active');
+        timelineLayers.forEach(({ layer }) => {
+          layer.eachLayer(l => { const el = l.getElement?.(); if (el) el.style.display = ''; });
+        });
+      }
+    });
+
+    timelineSlider.addEventListener('input', () => {
+      const yr = parseInt(timelineSlider.value);
+      timelineYear.textContent = yr;
+      const pct = ((yr - 1583) / (1911 - 1583) * 100).toFixed(1);
+      timelineSlider.style.setProperty('--pct', pct + '%');
+      applyTimeline(yr);
+    });
+
+    (async () => {
+
+      async function fetchGeoJSON(url){
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Failed to fetch ${url} (HTTP ${res.status})`);
+        return await res.json();
+      }
+
+      const karunAll = await fetchGeoJSON('./data/karun_all.geojson');
+
+      const bordersWhite = await loadGeoJSON('./data/borders.geojson', {
+        style: { color: '#ffffff', weight: 1.8, opacity: 0.5 }
+      });
+      const bordersLayer = L.layerGroup([bordersWhite]).addTo(map);
+
+      const chgisprov_pgn = await loadGeoJSON('./data/v6_1820_prov_pgn.geojson', { style: { weight: 2, fillOpacity: 0.1 }});
+      const chgispref_pgn = await loadGeoJSON('./data/v6_1820_pref_pgn.geojson', { style: { weight: 2, fillOpacity: 0.1 }});
+      const chgispref_pts = await loadGeoJSON('./data/v6_1820_pref_pts.geojson', {
+        label: true,
+        pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+          radius: 2, color: '#000000', weight: 1, fillColor: '#000000', fillOpacity: 1
+        })
+      });
+      const chgistwn_pts = await loadGeoJSON('./data/v6_1820_twn_pts.geojson', {
+        label: true,
+        pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+          radius: 2, color: '#000000', weight: 1, fillColor: '#000000', fillOpacity: 1
+        })
+      });
+
+      const icon_wp_gate = L.icon({
+        iconUrl: './data/img/willowgateicon.png',
+        iconSize: [10, 10], iconAnchor: [9, 9], popupAnchor: [0, -9]
+      });
+      const icon_giyamun = L.icon({
+        iconUrl: './data/img/giyamunicon.png',
+        iconSize: [10, 10], iconAnchor: [9, 9], popupAnchor: [0, -9]
+      });
+
+      const icon_castle = L.icon({
+        iconUrl: './data/img/castle_png.png',
+        iconSize: [18, 13],
+        iconAnchor: [9, 13],
+        popupAnchor: [0, -13]
+      });
+
+      function zoneType(zoneStr){
+        const z = String(zoneStr || '').toLowerCase();
+        if (z.includes('변대') || z.includes(' tai')) return 'tai';
+        if (z.includes('변내') || z.includes('dorgi')) return 'dorgi';
+        if (z.includes('변외') || z.includes('tulergi')) return 'tulergi';
+        if (z.includes('위장') || z.includes('aba')) return 'aba';
+        return 'unknown';
+      }
+
+      const mkTriIcon = (color, size = 10) => L.divIcon({
+        className: '',
+        html: `<div class="tri" style="--tri:${color}; width:${size}px; height:${size}px;"></div>`,
+        iconSize: [size, size], iconAnchor: [size/2, size/2], popupAnchor: [0, -size/2]
+      });
+
+      const mkTriPt = (color, { size = 10, label = false } = {}) => ({
+        label,
+        pointToLayer: (f, latlng) => L.marker(latlng, { icon: mkTriIcon(color, size) })
+      });
+
+      function makeKarunLayer(gj, { time, ztype, color }) {
+        return L.geoJSON(gj, {
+          filter: (f) => {
+            const p = f.properties || {};
+            return p.time === time && zoneType(p.zone) === ztype;
+          },
+          pointToLayer: mkTriPt(color).pointToLayer,
+          onEachFeature: (feature, layer) => {
+            const p = feature.properties || {};
+            const labelText = p.name_chf || p.NAME_FT || '정보';
+            layer.bindTooltip(labelText, {
+              permanent: true, direction: 'top', offset: [0, -6],
+              opacity: 1, className: 'plain-label'
+            });
+            if (typeof openInfoPanel === 'function') {
+              layer.on('click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                highlightLayer(layer);
+                openInfoPanel(labelText, p);
+              });
+            }
+          }
+        });
+      }
+
+      const mkIconPt = (icon, { label = false } = {}) => ({
+        label,
+        pointToLayer: (f, latlng) => L.marker(latlng, { icon })
+      });
+
+      // 카룬 색상
+      const dk_KX = '#FF6600'; const tk_KX = '#FFE500';
+      const dk_YZ = '#FF00CC'; const tk_YZ = '#AAFF00';
+      const dk_QL = '#00FF66'; const tk_QL = '#FF0099';
+      const dk_JQ = '#FFE000'; const tk_JQ = '#CC00FF';
+      const JQWC  = '#00BFFF';
+      const dk_DG = '#FF8800'; const tk_DG = '#00FFB3';
+
+      const kx_tai     = makeKarunLayer(karunAll, { time: '강희말기', ztype: 'tai',     color: dk_KX });
+      kx_tai.addTo(map);
+      const kx_tulergi = makeKarunLayer(karunAll, { time: '강희말기', ztype: 'tulergi', color: tk_KX });
+      kx_tulergi.addTo(map);
+
+      const yz_dorgi   = makeKarunLayer(karunAll, { time: '옹정초기', ztype: 'dorgi',   color: dk_YZ });
+      const yz_tulergi = makeKarunLayer(karunAll, { time: '옹정초기', ztype: 'tulergi', color: tk_YZ });
+      const karun_yz_bundle = L.layerGroup([yz_dorgi, yz_tulergi]);
+
+      const ql_dorgi   = makeKarunLayer(karunAll, { time: '건륭중기', ztype: 'dorgi',   color: dk_QL });
+      const ql_tulergi = makeKarunLayer(karunAll, { time: '건륭중기', ztype: 'tulergi', color: tk_QL });
+      const karun_ql_bundle = L.layerGroup([ql_dorgi, ql_tulergi]);
+
+      const jq_dorgi   = makeKarunLayer(karunAll, { time: '가경9년', ztype: 'dorgi',   color: dk_JQ });
+      const jq_tulergi = makeKarunLayer(karunAll, { time: '가경9년', ztype: 'tulergi', color: tk_JQ });
+      const karun_jq_bundle = L.layerGroup([jq_dorgi, jq_tulergi]);
+
+      const jq_weichang = makeKarunLayer(karunAll, { time: '가경23년', ztype: 'aba', color: JQWC });
+
+      const dg_dorgi   = makeKarunLayer(karunAll, { time: '도광27년', ztype: 'dorgi',   color: dk_DG });
+      const dg_tulergi = makeKarunLayer(karunAll, { time: '도광27년', ztype: 'tulergi', color: tk_DG });
+      const karun_dg_bundle = L.layerGroup([dg_dorgi, dg_tulergi]);
+
+      const admin_v1 = await loadGeoJSON('./data/admin_lv1_line.geojson', {
+        style: { color: '#000000', weight: 4, opacity: 0.8 }
+      });
+      admin_v1.addTo(map);
+
+      const admin_pts = await loadGeoJSON('./data/manchu_admin_pt.geojson', {
+        label: true,
+        pointToLayer: (feature, latlng) => {
+          const marker = L.marker(latlng, { icon: icon_admin });
+          oms.addMarker(marker);
+          return marker;
+        }
+      });
+      admin_pts.addTo(map);
+
+      const giyamun_pt = await loadGeoJSON('./data/manchu_giyamun_pt.geojson',
+        mkIconPt(icon_giyamun, { label: true })
+      );
+      giyamun_pt.addTo(map);
+
+      const wpkangxi       = await loadGeoJSON('./data/willowpalisade-kangxi.geojson',    { style: willowpalisade });
+      const wp_gate_kx_pts = await loadGeoJSON('./data/willowpalisade_gate_kxyz.geojson', mkIconPt(icon_wp_gate, { label: true }));
+      const wpkangxi_bundle = L.layerGroup([wpkangxi, wp_gate_kx_pts]);
+      wpkangxi_bundle.addTo(map);
+
+      const wpqianlong     = await loadGeoJSON('./data/willowpalisade-qianlong.geojson',  { style: willowpalisade });
+      const wp_gate_ql_pts = await loadGeoJSON('./data/willowpalisade_gate_ql.geojson',   mkIconPt(icon_wp_gate, { label: true }));
+      const wpqianlong_bundle = L.layerGroup([wpqianlong, wp_gate_ql_pts]);
+
+      const groupedOverlays = {
+        "기본지리정보": {
+          [`${lineSvg('#000')}성경장군 관할 경계선`]:  admin_v1,
+          [`${dotSvg('#004eff')}행정 지명(lv1/lv2)`]: admin_pts,
+          [`${dotSvg('#888')}역참`]:                   giyamun_pt
+        },
+        "유조변": {
+          [`${lineSvg('#d60000')}유조변(강희-옹정)`]:  wpkangxi_bundle,
+          [`${lineSvg('#d60000')}유조변(건륭이후)`]:   wpqianlong_bundle
+        },
+        "邊臺": {
+          [`${triSvg(dk_KX)}邊臺(강희기 이후)`]:       kx_tai
+        },
+        "강희기 카룬": {
+          [`${triSvg(tk_KX)}변외카룬(강희말기)`]:      kx_tulergi
+        },
+        "옹정기 카룬": {
+          [`${triSvg(dk_YZ)}${triSvg(tk_YZ)}변내/변외카룬(옹정초기)`]: karun_yz_bundle
+        },
+        "건륭기 카룬": {
+          [`${triSvg(dk_QL)}${triSvg(tk_QL)}변내/변외카룬(건륭중기)`]: karun_ql_bundle
+        },
+        "가경기 카룬": {
+          [`${triSvg(dk_JQ)}${triSvg(tk_JQ)}변내/변외카룬(가경 9년)`]: karun_jq_bundle
+        },
+        "가경기 위장카룬": {
+          [`${triSvg(JQWC)}성경위장 카룬(가경 23년)`]: jq_weichang
+        },
+        "도광기 카룬": {
+          [`${triSvg(dk_DG)}${triSvg(tk_DG)}변내/변외카룬(도광 27년)`]: karun_dg_bundle
+        },
+        "참고자료_CHGIS (1820)": {
+          [`${lineSvg('#666')}省 경계선`]: chgisprov_pgn,
+          [`${lineSvg('#999')}府 경계선`]: chgispref_pgn,
+          [`${dotSvg('#000')}府 치소`]:    chgispref_pts,
+          [`${dotSvg('#000')}인문지명`]:   chgistwn_pts
+        }
+      };
+
+      L.control.groupedLayers(baseLayers, groupedOverlays, {
+        collapsed: false,
+        groupsCollapsible: false,
+        groupCheckboxes: true
+      }).addTo(map);
+
+      insertLabelToggle();
+
+      // 검색 인덱스 빌드
+      buildSearchIndex(kx_tai,     '邊臺(강희말기)');
+      buildSearchIndex(kx_tulergi, '변외카룬(강희말기)');
+      buildSearchIndex(yz_dorgi,   '변내카룬(옹정초기)');
+      buildSearchIndex(yz_tulergi, '변외카룬(옹정초기)');
+      buildSearchIndex(ql_dorgi,   '변내카룬(건륭중기)');
+      buildSearchIndex(ql_tulergi, '변외카룬(건륭중기)');
+      buildSearchIndex(jq_dorgi,   '변내카룬(가경9년)');
+      buildSearchIndex(jq_tulergi, '변외카룬(가경9년)');
+      buildSearchIndex(jq_weichang,'위장카룬(가경23년)');
+      buildSearchIndex(dg_dorgi,   '변내카룬(도광27년)');
+      buildSearchIndex(dg_tulergi, '변외카룬(도광27년)');
+      buildSearchIndex(admin_pts,    '행정지명');
+      buildSearchIndex(giyamun_pt,   '역참');
+      buildSearchIndex(chgistwn_pts, 'CHGIS 인문지명(1820)');
+      buildSearchIndex(wp_gate_kx_pts, '유조변 변문(강희-옹정)');
+      buildSearchIndex(wp_gate_ql_pts, '유조변 변문(건륭이후)');
+
+      // 가제티어(좌표 없음) 검색 인덱스 추가
+      try {
+        const BASE = 'https://raw.githubusercontent.com/mucenfere/mukden_karun/main';
+        const gazetteerData = await fetch(`${BASE}/data/mukden_karun_gazetteer.json?t=${Date.now()}`).then(r => r.json());
+        gazetteerData.forEach(entry => {
+          if (!entry.hanja && !entry.manchu) return;
+          searchIndex.push({
+            name:   entry.hanja   || '',
+            ma:     entry.manchu  || '',
+            zone:   entry.type    || entry.time || '가제티어',
+            latlng: null,
+            layer:  null
+          });
+        });
+      } catch(e) { console.warn('가제티어 로드 실패:', e); }
+
+      // 시계열 레이어 등록
+      [
+        { layer: kx_tai,      time: '강희말기' },
+        { layer: kx_tulergi,  time: '강희말기' },
+        { layer: yz_dorgi,    time: '옹정초기' },
+        { layer: yz_tulergi,  time: '옹정초기' },
+        { layer: ql_dorgi,    time: '건륭중기' },
+        { layer: ql_tulergi,  time: '건륭중기' },
+        { layer: jq_dorgi,    time: '가경9년'  },
+        { layer: jq_tulergi,  time: '가경9년'  },
+        { layer: jq_weichang, time: '가경23년' },
+        { layer: dg_dorgi,    time: '도광27년' },
+        { layer: dg_tulergi,  time: '도광27년' },
+      ].forEach(item => timelineLayers.push(item));
+
+      // ── 고정 라벨 ──
+      L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-sm', opacity: 0.5 })
+        .setContent('盛京圍場')
+        .setLatLng([42 + 40/60, 125 + 15/60])
+        .addTo(map);
+
+      L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-sm', opacity: 0.5 })
+        .setContent('吉林圍場')
+        .setLatLng([43 + 10/60, 126 + 17/60])
+        .addTo(map);
+
+      L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-wrap', opacity: 0.5 })
+        .setContent('額爾敏/哈爾敏<br>蔘場')
+        .setLatLng([41 + 55/60, 126 + 8/60])
+        .addTo(map);
+
+      L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-wrap', opacity: 0.5 })
+        .setContent('養息牧<br>牧場')
+        .setLatLng([42 + 30/60, 122 + 14/60])
+        .addTo(map);
+
+    })().catch(err => {
+      console.error(err);
+      alert(err.message || err);
+    });
+  </script>
+</body>
+</html>

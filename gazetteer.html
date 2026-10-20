@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <link rel="icon" href="https://mucenfere.github.io/favicon_gis.svg" type="image/svg+xml">
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YWD860LFFR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-YWD860LFFR');
+</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gazetteer(地名目錄)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: #f8f8f6; color: #111;
+      font-size: 16px; /* base ×1.3 ≈ 130% */
+    }
+
+
+    /* ── Top nav ── */
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; height: 44px;
+      display: flex; gap: 48px; align-items: center; padding: 0 80px;
+      background: rgba(255,255,255,0.95); z-index: 1000;
+      border-bottom: 1px solid #ddd;
+    }
+    .topnav a { text-decoration: none; color: #111; font-weight: 600; }
+    .topnav a:hover { text-decoration: underline; }
+    body { padding-top: 44px; }
+    main { max-width: 1600px; margin: 0 auto; padding: 36px 42px 80px; }
+    h1 { font-size: 28px; font-weight: 800; margin: 0 0 8px; }
+    .subtitle { color: #666; font-size: 19px; margin-bottom: 31px; }
+
+    /* ── Auth bar ── */
+    .auth-bar {
+      display: flex; align-items: center; gap: 13px;
+      margin-bottom: 21px; padding: 13px 18px;
+      background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 17px;
+    }
+    .auth-bar input {
+      flex: 1; padding: 8px 13px; border: 1px solid #ccc;
+      border-radius: 6px; font-size: 17px; font-family: monospace;
+    }
+    .auth-bar button {
+      padding: 8px 18px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 17px; font-weight: 600;
+      background: #111; color: #fff;
+    }
+    .auth-status { font-size: 15px; color: #888; }
+    .auth-status.ok   { color: #2a9d2a; }
+    .auth-status.fail { color: #c0392b; }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex; gap: 16px; align-items: center;
+      margin-bottom: 13px; flex-wrap: wrap;
+    }
+    .filter-bar label { font-size: 17px; color: #444; white-space: nowrap; }
+    .filter-bar select,
+    .filter-bar input[type=text] {
+      font-size: 17px; padding: 5px 10px;
+      border: 1px solid #ccc; border-radius: 4px;
+      background: #fff; color: #111;
+    }
+    .filter-bar input[type=text] { width: 234px; }
+
+    .filter-bar .sort-group {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .filter-bar .sort-group label { font-size: 17px; color: #444; }
+    .filter-bar .sort-group select { font-size: 17px; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; }
+    .btn-sort-dir {
+      padding: 5px 13px; border: 1px solid #ccc; border-radius: 4px;
+      background: #fff; font-size: 17px; cursor: pointer; color: #111;
+    }
+    .btn-sort-dir:hover { background: #f0f0ee; }
+
+    .btn-add {
+      padding: 6px 18px; background: #1a73e8; color: #fff;
+      border: none; border-radius: 6px; font-size: 17px;
+      font-weight: 600; cursor: pointer; white-space: nowrap;
+    }
+    .btn-add:disabled { background: #aaa; cursor: default; }
+
+    /* 결과 건수 */
+    .row-count { font-size: 15px; color: #888; margin-bottom: 10px; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 4px; background: #fff; }
+    table {
+      width: 100%; border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 17px; line-height: 1.55;
+    }
+
+    col.col-id      { width: 62px;  }
+    col.col-hanja   { width: 156px; }
+    col.col-manchu  { width: 208px; }
+    col.col-time    { width: 143px; }
+    col.col-type    { width: 117px; }
+    col.col-desc    { width: auto;  }
+    col.col-trust   { width: 68px;  }
+    col.col-actions { width: 117px; }
+
+    thead tr { background: #3a3028; color: #f5f0e8; }
+    thead th {
+      padding: 13px 16px; text-align: center;
+      font-weight: 700; white-space: nowrap;
+      border-right: 1px solid #5a4a3a; font-size: 17px;
+    }
+    thead th:last-child { border-right: none; }
+
+    tbody tr { border-bottom: 1px solid #f0f0ee; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:nth-child(even) { background: #f5f5f3; }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+    tbody tr:hover { background: #e8f0fe; }
+
+    td { padding: 9px 16px; vertical-align: top; border-right: 1px solid #e0e0dc; }
+    td:last-child { border-right: none; }
+    .empty-row td { text-align: center; color: #999; padding: 42px; border-right: none; }
+
+    td.seq    { color: #bbb; font-size: 15px; text-align: center; white-space: nowrap; }
+    td.hanja  { font-size: 18px; font-weight: 600; word-break: break-word; }
+    td.manchu { font-style: italic; color: #555; font-size: 15px; word-break: break-word; }
+    td.time   { color: #555; white-space: nowrap; font-size: 15px; }
+    td.type   { white-space: nowrap; font-size: 15px; text-align: center; vertical-align: middle; }
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 4px; font-size: 14px; font-weight: 700;
+      white-space: nowrap; letter-spacing: 0.2px;
+    }
+    .badge-변외카룬 { background: #d8ecd8; color: #1a5a1a; }
+    .badge-변내카룬 { background: #d8e4f0; color: #1a3a6a; }
+    .badge-위장카룬 { background: #ffe8c8; color: #7a4000; }
+    td.desc   { color: #444; word-break: break-word; }
+    td.trust  { color: #555; white-space: nowrap; text-align: center; font-size: 15px; }
+    td.actions { white-space: nowrap; }
+
+    .btn-edit, .btn-del {
+      padding: 4px 13px; border-radius: 5px; border: none;
+      cursor: pointer; font-size: 15px; font-weight: 600; margin-right: 5px;
+    }
+    .btn-edit { background: #e8f0fe; color: #1a73e8; }
+    .btn-edit:hover { background: #c5d8fc; }
+    .btn-del  { background: #fce8e6; color: #c0392b; }
+    .btn-del:hover  { background: #f5c0bb; }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35); z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 10px; padding: 31px 36px;
+      width: 560px; max-width: calc(100vw - 32px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    }
+    .modal h2 { margin: 0 0 23px; font-size: 22px; font-weight: 800; }
+    .modal label {
+      display: block; font-size: 15px; font-weight: 700;
+      color: #555; margin-bottom: 5px; margin-top: 16px;
+    }
+    .modal label:first-of-type { margin-top: 0; }
+    .modal input, .modal textarea {
+      width: 100%; padding: 9px 13px; border: 1px solid #ccc;
+      border-radius: 6px; font-size: 17px; font-family: inherit;
+    }
+    .modal textarea { height: 104px; resize: vertical; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 13px; margin-top: 26px; }
+    .btn-cancel {
+      padding: 9px 21px; border: 1px solid #ccc; background: #fff;
+      border-radius: 6px; font-size: 17px; cursor: pointer;
+    }
+    .btn-save {
+      padding: 9px 23px; background: #111; color: #fff;
+      border: none; border-radius: 6px; font-size: 17px;
+      font-weight: 600; cursor: pointer;
+    }
+    .btn-save:disabled { background: #aaa; cursor: default; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 36px; left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: #222; color: #fff; padding: 13px 28px;
+      border-radius: 20px; font-size: 17px; opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 3000; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <a href="https://mucenfere.github.io/">Home</a>
+    <a href="./index.html">Map</a>
+    <a href="./gazetteer.html">Gazetteer</a>
+    <a href="./reference.html">Reference</a>
+    <a href="./worklog.html">Work Log</a>
+  </nav>
+
+  <main>
+    <h1>Gazetteer / 地名目錄</h1>
+    <p class="subtitle">성경 지역 카룬 지명 목록과 위치 비정의 근거 자료.</p>
+
+    <!-- Auth -->
+    <div class="auth-bar">
+      <span style="white-space:nowrap;font-weight:600;">🔑 편집 모드</span>
+      <input type="password" id="tokenInput" placeholder="GitHub Personal Access Token" autocomplete="off" />
+      <button id="tokenBtn">확인</button>
+      <span id="authStatus" class="auth-status">미인증 — 읽기 전용</span>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <label>시간 레이어:
+        <select id="filterTime"><option value="">전체</option></select>
+      </label>
+      <label>유형:
+        <select id="filterType"><option value="">전체</option></select>
+      </label>
+      <label>신뢰도:
+        <select id="filterTrust"><option value="">전체</option></select>
+      </label>
+      <label>검색:
+        <input type="text" id="searchInput" placeholder="한자·만주어·설명…" />
+      </label>
+      <div class="sort-group">
+        <label>정렬:
+          <select id="sortCol">
+            <option value="seq">입력순</option>
+            <option value="hanja">지명_한자</option>
+            <option value="manchu">지명_만주어</option>
+            <option value="time">시간 레이어</option>
+            <option value="type">유형</option>
+            <option value="trust">신뢰도</option>
+          </select>
+        </label>
+        <button class="btn-sort-dir" id="sortDirBtn">↑ 오름차순</button>
+      </div>
+      <button class="btn-add" id="addBtn" disabled>+ 항목 추가</button>
+    </div>
+
+    <div class="row-count" id="rowCount"></div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="mainTable">
+        <colgroup>
+          <col class="col-id">
+          <col class="col-hanja">
+          <col class="col-manchu">
+          <col class="col-time">
+          <col class="col-type">
+          <col class="col-desc">
+          <col class="col-trust">
+          <col class="col-actions">
+        </colgroup>
+        <thead>
+          <tr>
+            <th style="text-align:center">No</th>
+            <th>지명_한자</th>
+            <th>지명_만주어</th>
+            <th>시간 레이어</th>
+            <th>유형</th>
+            <th style="text-align:left">위치를 비정한 과정과 근거 자료</th>
+            <th style="text-align:center">신뢰도</th>
+            <th id="actionsHeader" style="display:none">작업</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr class="empty-row"><td colspan="8">불러오는 중…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h2 id="modalTitle">항목 추가</h2>
+      <label>지명_한자 漢字</label>
+      <input type="text" id="fHanja" placeholder="예: 鳳凰城" />
+      <label>지명_만주어 Manju gisun</label>
+      <input type="text" id="fManchu" placeholder="예: Fiyanggu hoton" />
+      <label>시간 레이어</label>
+      <input type="text" id="fTime" placeholder="예: 강희말기, 건륭중기 등" />
+      <label>유형</label>
+      <input type="text" id="fType" placeholder="예: 변내카룬, 변외카룬, 邊臺 등" />
+      <label>위치 고증 관련 자료</label>
+      <textarea id="fDesc" placeholder="위치 비정 근거, 사료 출처, 관련 카룬 등"></textarea>
+      <label>신뢰도</label>
+      <input type="text" id="fTrust" placeholder="예: 高, 中, 低" />
+      <div class="modal-actions">
+        <button class="btn-cancel" id="modalCancel">취소</button>
+        <button class="btn-save"   id="modalSave">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (() => {
+    const REPO   = 'mucenfere/mukden_karun';
+    const PATH   = 'data/mukden_karun_gazetteer.json';
+    const BRANCH = 'main';
+
+    let token     = '';
+    let entries   = [];
+    let fileSha   = '';
+    let editingId = null;
+    let authed    = false;
+    let sortDir   = 'asc';
+
+    const tokenInput    = document.getElementById('tokenInput');
+    const tokenBtn      = document.getElementById('tokenBtn');
+    const authStatus    = document.getElementById('authStatus');
+    const addBtn        = document.getElementById('addBtn');
+    const searchInput   = document.getElementById('searchInput');
+    const filterTime    = document.getElementById('filterTime');
+    const filterType    = document.getElementById('filterType');
+    const filterTrust   = document.getElementById('filterTrust');
+    const sortCol       = document.getElementById('sortCol');
+    const sortDirBtn    = document.getElementById('sortDirBtn');
+    const tableBody     = document.getElementById('tableBody');
+    const actionsHeader = document.getElementById('actionsHeader');
+    const rowCount      = document.getElementById('rowCount');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalTitle    = document.getElementById('modalTitle');
+    const modalCancel   = document.getElementById('modalCancel');
+    const modalSave     = document.getElementById('modalSave');
+    const fHanja        = document.getElementById('fHanja');
+    const fManchu       = document.getElementById('fManchu');
+    const fTime         = document.getElementById('fTime');
+    const fType         = document.getElementById('fType');
+    const fDesc         = document.getElementById('fDesc');
+    const fTrust        = document.getElementById('fTrust');
+    const toastEl       = document.getElementById('toast');
+
+    let toastTimer;
+    function showToast(msg, duration = 2800) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/[&<>"']/g, m =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+    }
+
+    function apiHeaders() {
+      return {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github+json'
+      };
+    }
+
+    async function fetchFile() {
+      const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${PATH}?t=${Date.now()}`;
+      const res = await fetch(rawUrl);
+      if (res.status === 404) { fileSha = ''; return []; }
+      if (!res.ok) throw new Error(`데이터 불러오기 실패: ${res.status}`);
+      const data = await res.json();
+      fetchSha();
+      return data;
+    }
+
+    async function fetchSha() {
+      if (!token) return;
+      const url = `https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`;
+      const res = await fetch(url, { headers: apiHeaders() });
+      if (res.ok) { const d = await res.json(); fileSha = d.sha; }
+    }
+
+    async function saveFile(newEntries, commitMsg) {
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(newEntries, null, 2))));
+      const body = { message: commitMsg, content, branch: BRANCH };
+      if (fileSha) body.sha = fileSha;
+      const res = await fetch(
+        `https://api.github.com/repos/${REPO}/contents/${PATH}`,
+        { method: 'PUT', headers: apiHeaders(), body: JSON.stringify(body) }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || `저장 실패 (${res.status})`);
+      }
+      const d = await res.json();
+      fileSha = d.content.sha;
+    }
+
+    // ── 드롭다운 옵션 빌드 ──
+    const TIME_ORDER  = ['강희45년','강희51년','강희52년','강희60년','건륭중기','가경9년','가경23년','도광27년'];
+    const TYPE_ORDER  = ['변외카룬','변내카룬','위장카룬'];
+    const TRUST_ORDER = ['A','B','C','D','E'];
+
+    function buildFilterOptions() {
+      const uniq = (field) => [...new Set(entries.map(e => e[field] || '').filter(Boolean))];
+      const sortedBy = (vals, order) => {
+        const inOrder = order.filter(v => vals.includes(v));
+        const rest    = vals.filter(v => !order.includes(v)).sort();
+        return [...inOrder, ...rest];
+      };
+      const fill = (sel, vals) => {
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">전체</option>';
+        vals.forEach(v => {
+          const o = document.createElement('option');
+          o.value = o.textContent = v;
+          sel.appendChild(o);
+        });
+        if (cur) sel.value = cur;
+      };
+      fill(filterTime,  sortedBy(uniq('time'),  TIME_ORDER));
+      fill(filterType,  sortedBy(uniq('type'),  TYPE_ORDER));
+      fill(filterTrust, sortedBy(uniq('trust'), TRUST_ORDER));
+    }
+
+    // ── 필터 + 정렬 ──
+    function getList() {
+      const q      = searchInput.value.trim().toLowerCase();
+      const tTime  = filterTime.value;
+      const tType  = filterType.value;
+      const tTrust = filterTrust.value;
+      const col    = sortCol.value;
+
+      let list = entries
+        .map((e, i) => ({ ...e, seq: i + 1 }))
+        .filter(e => {
+          if (tTime  && (e.time  || '') !== tTime)  return false;
+          if (tType  && (e.type  || '') !== tType)  return false;
+          if (tTrust && (e.trust || '') !== tTrust) return false;
+          if (q && ![e.hanja, e.manchu, e.time, e.type, e.desc, e.trust]
+                .some(v => (v || '').toLowerCase().includes(q))) return false;
+          return true;
+        });
+
+      list.sort((a, b) => {
+        let cmp = 0;
+        if (col === 'seq') {
+          cmp = a.seq - b.seq;
+        } else if (col === 'time') {
+          const ai = TIME_ORDER.indexOf(a.time  || '');
+          const bi = TIME_ORDER.indexOf(b.time  || '');
+          cmp = (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        } else if (col === 'trust') {
+          const ai = TRUST_ORDER.indexOf(a.trust || '');
+          const bi = TRUST_ORDER.indexOf(b.trust || '');
+          cmp = (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        } else if (col === 'type') {
+          const ai = TYPE_ORDER.indexOf(a.type  || '');
+          const bi = TYPE_ORDER.indexOf(b.type  || '');
+          cmp = (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        } else {
+          const va = (a[col] || '').toLowerCase();
+          const vb = (b[col] || '').toLowerCase();
+          cmp = va.localeCompare(vb, 'ko');
+        }
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+
+      return list;
+    }
+
+    // ── Render ──
+    function renderTable() {
+      const list = getList();
+      rowCount.textContent = `총 ${list.length}건`;
+
+      if (list.length === 0) {
+        tableBody.innerHTML = `<tr class="empty-row"><td colspan="8">항목이 없습니다.</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = list.map(e => `
+        <tr data-id="${e.id}">
+          <td class="seq">${e.seq}</td>
+          <td class="hanja">${esc(e.hanja)}</td>
+          <td class="manchu">${esc(e.manchu)}</td>
+          <td class="time">${esc(e.time)}</td>
+          <td class="type">${e.type ? `<span class="badge badge-${esc(e.type)}">${esc(e.type)}</span>` : ''}</td>
+          <td class="desc">${esc(e.desc)}</td>
+          <td class="trust">${esc(e.trust)}</td>
+          <td class="actions"${authed ? '' : ' style="display:none"'}>
+            <button class="btn-edit" data-id="${e.id}">수정</button>
+            <button class="btn-del"  data-id="${e.id}">삭제</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ── 정렬 방향 버튼 ──
+    sortDirBtn.addEventListener('click', () => {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      sortDirBtn.textContent = sortDir === 'asc' ? '↑ 오름차순' : '↓ 내림차순';
+      renderTable();
+    });
+
+    [filterTime, filterType, filterTrust, sortCol].forEach(el =>
+      el.addEventListener('change', renderTable)
+    );
+    searchInput.addEventListener('input', renderTable);
+
+    // ── Auth ──
+    tokenBtn.addEventListener('click', async () => {
+      const t = tokenInput.value.trim();
+      if (!t) return;
+      tokenBtn.disabled = true; tokenBtn.textContent = '확인 중…';
+      try {
+        const res = await fetch('https://api.github.com/user', {
+          headers: { 'Authorization': `token ${t}`, 'Accept': 'application/vnd.github+json' }
+        });
+        if (!res.ok) throw new Error();
+        const user = await res.json();
+        token = t; authed = true;
+        authStatus.textContent = `✓ ${user.login} 로 인증됨`;
+        authStatus.className = 'auth-status ok';
+        addBtn.disabled = false;
+        actionsHeader.style.display = '';
+        tokenInput.value = '';
+        await fetchSha();
+        renderTable();
+        showToast(`${user.login} 로 로그인 완료`);
+      } catch {
+        authStatus.textContent = '✗ 토큰이 올바르지 않습니다';
+        authStatus.className = 'auth-status fail';
+      } finally {
+        tokenBtn.disabled = false; tokenBtn.textContent = '확인';
+      }
+    });
+    tokenInput.addEventListener('keydown', e => { if (e.key === 'Enter') tokenBtn.click(); });
+
+    addBtn.addEventListener('click', () => openModal(null));
+
+    tableBody.addEventListener('click', e => {
+      const id = e.target.dataset.id;
+      if (!id) return;
+      if (e.target.classList.contains('btn-edit')) openModal(id);
+      if (e.target.classList.contains('btn-del'))  confirmDelete(id);
+    });
+
+    // ── Modal ──
+    function openModal(id) {
+      editingId = id;
+      if (id) {
+        const entry = entries.find(e => e.id === id);
+        modalTitle.textContent = '항목 수정';
+        fHanja.value  = entry.hanja  || '';
+        fManchu.value = entry.manchu || '';
+        fTime.value   = entry.time   || '';
+        fType.value   = entry.type   || '';
+        fDesc.value   = entry.desc   || '';
+        fTrust.value  = entry.trust  || '';
+      } else {
+        modalTitle.textContent = '항목 추가';
+        fHanja.value = fManchu.value = fTime.value = fType.value = fDesc.value = fTrust.value = '';
+      }
+      modalBackdrop.classList.add('open');
+      fHanja.focus();
+    }
+    function closeModal() { modalBackdrop.classList.remove('open'); editingId = null; }
+    modalCancel.addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) closeModal(); });
+
+    modalSave.addEventListener('click', async () => {
+      const hanja = fHanja.value.trim();
+      if (!hanja) { fHanja.focus(); showToast('지명_한자를 입력해주세요'); return; }
+      modalSave.disabled = true; modalSave.textContent = '저장 중…';
+      try {
+        let newEntries;
+        if (editingId) {
+          newEntries = entries.map(e => e.id === editingId
+            ? { ...e, hanja, manchu: fManchu.value.trim(), time: fTime.value.trim(), type: fType.value.trim(), desc: fDesc.value.trim(), trust: fTrust.value.trim() }
+            : e);
+          await saveFile(newEntries, `gazetteer: update "${hanja}"`);
+          entries = newEntries;
+          showToast(`"${hanja}" 수정 완료`);
+        } else {
+          const newEntry = {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            hanja, manchu: fManchu.value.trim(), time: fTime.value.trim(),
+            type: fType.value.trim(), desc: fDesc.value.trim(), trust: fTrust.value.trim()
+          };
+          newEntries = [...entries, newEntry];
+          await saveFile(newEntries, `gazetteer: add "${hanja}"`);
+          entries = newEntries;
+          showToast(`"${hanja}" 추가 완료`);
+        }
+        closeModal();
+        buildFilterOptions();
+        renderTable();
+      } catch(err) {
+        showToast('⚠ ' + err.message, 4000);
+      } finally {
+        modalSave.disabled = false; modalSave.textContent = '저장';
+      }
+    });
+
+    async function confirmDelete(id) {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
+      if (!confirm(`"${entry.hanja}" 을(를) 삭제할까요?`)) return;
+      try {
+        const newEntries = entries.filter(e => e.id !== id);
+        await saveFile(newEntries, `gazetteer: delete "${entry.hanja}"`);
+        entries = newEntries;
+        buildFilterOptions();
+        renderTable();
+        showToast(`"${entry.hanja}" 삭제 완료`);
+      } catch(err) {
+        showToast('⚠ ' + err.message, 4000);
+      }
+    }
+
+    // ── Init ──
+    (async () => {
+      try {
+        entries = await fetchFile();
+        buildFilterOptions();
+        renderTable();
+      } catch(err) {
+        tableBody.innerHTML = `<tr class="empty-row"><td colspan="8">데이터 불러오기 실패: ${err.message}</td></tr>`;
+      }
+    })();
+
+  })();
+  </script>
+</body>
+</html>
