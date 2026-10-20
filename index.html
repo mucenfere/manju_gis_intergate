@@ -315,59 +315,44 @@
       text-align: center;
     }
 
-    /* ── 시계열 슬라이더 ── */
+    /* ── 시계열 황제 버튼 바 ── */
     .timeline-bar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      height: 64px;
+      height: 54px;
       background: rgba(20,20,30,0.88);
       backdrop-filter: blur(6px);
       z-index: 1400;
       display: flex;
       align-items: center;
-      padding: 0 32px;
-      gap: 18px;
+      justify-content: center;
+      padding: 0 24px;
+      gap: 10px;
       border-top: 1px solid rgba(255,255,255,0.1);
     }
     .timeline-bar label {
-      color: #ccc;
+      color: #aaa;
       font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
-      letter-spacing: 0.5px;
+      margin-right: 6px;
     }
-    .timeline-year {
-      color: #fff;
-      font-size: 20px;
-      font-weight: 800;
-      min-width: 52px;
-      text-align: center;
-      font-variant-numeric: tabular-nums;
-    }
-    .timeline-bar input[type=range] {
-      flex: 1;
-      -webkit-appearance: none;
-      height: 4px;
-      border-radius: 2px;
-      background: linear-gradient(to right, #4d8eff 0%, #4d8eff var(--pct,0%), rgba(255,255,255,0.2) var(--pct,0%), rgba(255,255,255,0.2) 100%);
-      outline: none;
+    .era-btn {
+      padding: 6px 18px;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 16px;
+      background: transparent;
+      color: #ccc;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-    .timeline-bar input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 0 6px rgba(0,0,0,0.4);
-      cursor: pointer;
-    }
-    .timeline-bar input[type=range]::-moz-range-thumb {
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      border: none;
-      box-shadow: 0 0 6px rgba(0,0,0,0.4);
-    }
+    .era-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .era-btn.active { background: #4d8eff; color: #fff; border-color: #4d8eff; }
+    .era-btn.all.active { background: #555; border-color: #888; }
+
     .timeline-toggle {
       padding: 5px 14px;
       border: 1px solid rgba(255,255,255,0.25);
@@ -381,8 +366,8 @@
     .timeline-toggle:hover { background: rgba(255,255,255,0.08); }
     .timeline-toggle.active { background: #4d8eff; color: #fff; border-color: #4d8eff; }
 
-    /* 슬라이더 활성 시 지도 하단 여백 */
-    #map.timeline-on { height: calc(100% - 44px - 64px); }
+    /* 바 활성 시 지도 하단 여백 */
+    #map.timeline-on { height: calc(100% - 44px - 54px); }
 
   </style>
   </style>
@@ -407,13 +392,15 @@
     <div class="search-results" id="searchResults"></div>
   </div>
 
-  <!-- 시계열 슬라이더 -->
+  <!-- 시계열 황제 버튼 바 -->
   <div class="timeline-bar" id="timelineBar" style="display:none;">
     <label>시계열</label>
-    <span class="timeline-year" id="timelineYear">1700</span>
-    <input type="range" id="timelineSlider" min="1583" max="1911" value="1700" step="1" />
-    <label style="font-size:11px;color:#666;">1583</label>
-    <label style="font-size:11px;color:#666;">1911</label>
+    <button class="era-btn" data-era="강희">강희</button>
+    <button class="era-btn" data-era="옹정">옹정</button>
+    <button class="era-btn" data-era="건륭">건륭</button>
+    <button class="era-btn" data-era="가경">가경</button>
+    <button class="era-btn" data-era="도광">도광</button>
+    <button class="era-btn all" data-era="전체">전체</button>
   </div>
   <button class="timeline-toggle" id="timelineToggle" style="position:fixed;bottom:12px;right:12px;z-index:1500;">⏱ 시계열</button>
 
@@ -661,57 +648,83 @@
       if (!e.target.closest('#searchPanel')) searchResults.classList.remove('open');
     });
 
-    // ── 시계열 슬라이더 ──
+    // ── 시계열 황제 버튼 ──
     const timelineLayers = [];
-    const TIME_RANGE = {
-      '강희45년': [1706,1706], '강희51년': [1712,1712],
-      '강희52년': [1713,1713], '강희60년': [1721,1721],
-      '강희말기': [1700,1722], '옹정초기': [1723,1735],
-      '건륭중기': [1736,1795], '가경9년':  [1804,1804],
-      '가경23년': [1818,1818], '도광27년': [1847,1847],
+
+    // 황제별로 표시할 레이어 time 값 매핑
+    const ERA_MAP = {
+      '강희': ['강희말기'],
+      '옹정': ['옹정초기'],
+      '건륭': ['건륭중기'],
+      '가경': ['가경9년', '가경23년'],
+      '도광': ['도광27년'],
     };
 
+    // 유조변 레이어: 황제별 표시 여부 (나중에 레이어 로드 후 채워짐)
+    const wpLayerMap = {};  // { '강희': layer, '옹정': layer, '건륭': layer, ... }
+
     const timelineBar    = document.getElementById('timelineBar');
-    const timelineSlider = document.getElementById('timelineSlider');
-    const timelineYear   = document.getElementById('timelineYear');
     const timelineToggle = document.getElementById('timelineToggle');
 
-    function applyTimeline(year) {
-      timelineLayers.forEach(({ layer, time }) => {
-        const range = TIME_RANGE[time];
-        if (!range) return;
-        const visible = year >= range[0] && year <= range[1];
+    function setLayerVisible(layer, visible) {
+      if (!layer) return;
+      if (layer.eachLayer) {
         layer.eachLayer(l => {
           const el = l.getElement ? l.getElement() : null;
           if (el) el.style.display = visible ? '' : 'none';
         });
+      } else {
+        const el = layer.getElement ? layer.getElement() : null;
+        if (el) el.style.display = visible ? '' : 'none';
+      }
+    }
+
+    function applyEra(era) {
+      if (era === '전체') {
+        // 모든 레이어 원래대로 복귀
+        timelineLayers.forEach(({ layer }) => setLayerVisible(layer, true));
+        Object.values(wpLayerMap).forEach(l => setLayerVisible(l, true));
+        return;
+      }
+      const activeTimes = ERA_MAP[era] || [];
+      // 카룬 레이어
+      timelineLayers.forEach(({ layer, time }) => {
+        const visible = activeTimes.includes(time);
+        setLayerVisible(layer, visible);
+      });
+      // 유조변 레이어
+      Object.entries(wpLayerMap).forEach(([e, layer]) => {
+        setLayerVisible(layer, e === era);
       });
     }
 
     let timelineActive = false;
+    let currentEra = null;
+
     timelineToggle.addEventListener('click', () => {
       timelineActive = !timelineActive;
       if (timelineActive) {
         timelineBar.style.display = 'flex';
         document.getElementById('map').classList.add('timeline-on');
         timelineToggle.classList.add('active');
-        applyTimeline(parseInt(timelineSlider.value));
       } else {
         timelineBar.style.display = 'none';
         document.getElementById('map').classList.remove('timeline-on');
         timelineToggle.classList.remove('active');
-        timelineLayers.forEach(({ layer }) => {
-          layer.eachLayer(l => { const el = l.getElement?.(); if (el) el.style.display = ''; });
-        });
+        // 버튼 활성 해제 + 레이어 전체 복귀
+        document.querySelectorAll('.era-btn').forEach(b => b.classList.remove('active'));
+        applyEra('전체');
+        currentEra = null;
       }
     });
 
-    timelineSlider.addEventListener('input', () => {
-      const yr = parseInt(timelineSlider.value);
-      timelineYear.textContent = yr;
-      const pct = ((yr - 1583) / (1911 - 1583) * 100).toFixed(1);
-      timelineSlider.style.setProperty('--pct', pct + '%');
-      applyTimeline(yr);
+    document.querySelectorAll('.era-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.era-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentEra = btn.dataset.era;
+        applyEra(currentEra);
+      });
     });
 
     (async () => {
@@ -965,6 +978,13 @@
         { layer: dg_dorgi,    time: '도광27년' },
         { layer: dg_tulergi,  time: '도광27년' },
       ].forEach(item => timelineLayers.push(item));
+
+      // 유조변 레이어 황제별 매핑
+      wpLayerMap['강희'] = wpkangxi_bundle;
+      wpLayerMap['옹정'] = wpkangxi_bundle;   // 강희-옹정 공용
+      wpLayerMap['건륭'] = wpqianlong_bundle;
+      wpLayerMap['가경'] = wpqianlong_bundle;
+      wpLayerMap['도광'] = wpqianlong_bundle;
 
       // ── 고정 라벨 ──
       L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-sm', opacity: 0.5 })
