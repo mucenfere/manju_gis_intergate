@@ -893,9 +893,10 @@
     function applyYear(year) {
       const activeTimes = getActiveTimesForYear(year);
       timelineLayers.forEach(({ layer, time }) => {
-        setLayerVisible(layer, activeTimes.includes(time));
+        // 카룬 시계열이 OFF면 모든 카룬 레이어 숨김
+        setLayerVisible(layer, karunTlActive && activeTimes.includes(time));
       });
-      // 유조변: 현재 연호의 wpKey
+      // 유조변: 현재 연호의 wpKey (카룬 시계열과 무관하게 항상 동작)
       const era = yearToEra(year);
       const eraDef = ERA_DEFS.find(e => e.name === era);
       const activeWp = eraDef?.wpKey || null;
@@ -1000,7 +1001,7 @@
       tlAllBtn.addEventListener('click', () => {
         document.querySelectorAll('.tl-era-chip').forEach(c => c.classList.remove('active'));
         tlAllBtn.classList.add('active');
-        timelineLayers.forEach(({ layer }) => setLayerVisible(layer, true));
+        timelineLayers.forEach(({ layer }) => setLayerVisible(layer, karunTlActive));
         Object.values(wpLayerMap).forEach(l => setLayerVisible(l, true));
       });
     }
@@ -1430,9 +1431,7 @@
       const dk_DG = '#FF8800'; const tk_DG = '#00FFB3';
 
       const kx_tai     = makeKarunLayer(karunAll, { time: '강희말기', ztype: 'tai',     color: dk_KX });
-      kx_tai.addTo(map);
       const kx_tulergi = makeKarunLayer(karunAll, { time: '강희말기', ztype: 'tulergi', color: tk_KX });
-      kx_tulergi.addTo(map);
 
       const yz_dorgi   = makeKarunLayer(karunAll, { time: '옹정초기', ztype: 'dorgi',   color: dk_YZ });
       const yz_tulergi = makeKarunLayer(karunAll, { time: '옹정초기', ztype: 'tulergi', color: tk_YZ });
@@ -1481,6 +1480,12 @@
       const wp_gate_ql_pts = await loadGeoJSON('./data/willowpalisade_gate_ql.geojson',   mkIconPt(icon_wp_gate, { label: true }));
       const wpqianlong_bundle = L.layerGroup([wpqianlong, wp_gate_ql_pts]);
 
+      // 장성 & 요동변장
+      const greatwallLayer   = await loadGeoJSON('./data/greatwall_line.geojson',   { style: { color: '#8B4513', weight: 2, opacity: 0.85 } });
+      greatwallLayer.addTo(map);
+      const liaodongWallLayer = await loadGeoJSON('./data/liaodong_wall.geojson',   { style: { color: '#a04000', weight: 2, opacity: 0.85, dashArray: '6,4' } });
+      // 요동변장은 초기 off
+
       // 누르하치 더미 레이어 (체크박스 생성용, 실제 표시는 nhMarker로 별도 관리)
       const nhDummyLayer = L.layerGroup();
       // 누르하치 전체 위치 더미 레이어
@@ -1489,10 +1494,12 @@
       const groupedOverlays = {
         "기본지리정보": {
           [`${lineSvg('#000')}성경장군 관할 경계선`]:  admin_v1,
+          [`${lineSvg('#8B4513')}장성`]:               greatwallLayer,
           [`${dotSvg('#004eff')}행정 지명(lv1/lv2)`]: admin_pts,
           [`${dotSvg('#888')}역참`]:                   giyamun_pt
         },
-        "유조변": {
+        "요동변장&유조변": {
+          [`${lineSvg('#a04000')}요동변장`]:            liaodongWallLayer,
           [`${lineSvg('#d60000')}유조변(강희-옹정)`]:  wpkangxi_bundle,
           [`${lineSvg('#d60000')}유조변(건륭이후)`]:   wpqianlong_bundle
         },
@@ -1650,6 +1657,8 @@
       map.on('layeradd', e => {
         if (e.layer === karunDummyLayer) {
           karunTlActive = true; showTimelineBar();
+          const yr = Number(document.getElementById('tlRange')?.value || 1661);
+          applyYear(yr);
         }
         if (e.layer === nhDummyLayer) {
           nhActive = true; showTimelineBar(); nhUpdateMarker(nhCurrentIdx);
