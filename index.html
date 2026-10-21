@@ -324,7 +324,7 @@
       border-radius: 12px;
       border: 1px solid #ddd;
       box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-      padding: 10px 20px 8px;
+      padding: 6px 16px 10px;
     }
 
     /* 슬라이더 행 */
@@ -498,6 +498,24 @@
       background: #fff; border: 2.5px solid #c8860a; cursor: grab;
     }
 
+    /* 누르하치 플레이 버튼 */
+    .tl-nh-play-btn {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid #c8860a;
+      background: #fff;
+      color: #c8860a;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+      line-height: 1;
+      transition: background 0.15s, color 0.15s;
+    }
+    .tl-nh-play-btn:hover { background: #c8860a; color: #fff; }
+    .tl-nh-play-btn.playing { background: #c8860a; color: #fff; }
+
     /* 누르하치 신뢰등급 범례 (시계열 바 안) */
     .tl-trust-legend {
       display: flex; align-items: center; gap: 8px;
@@ -563,6 +581,7 @@
         </div>
       </div>
       <div class="tl-slider-row">
+        <button class="tl-nh-play-btn" id="tlNhPlayBtn" title="재생/정지">▶</button>
         <div class="tl-track-wrap">
           <input type="range" class="tl-range-nh" id="tlNhRange" min="0" max="0" value="0" step="1" />
           <div class="tl-ticks" id="tlNhTicks"><!-- JS로 생성 --></div>
@@ -990,81 +1009,83 @@
     // 누르하치 이동 경로 시계열
     // ══════════════════════════════════════════════
     const NH_RECORDS = [
-      { tb:"1583/01", te:"1583/04", mj:"hetu ala",           ch:"赫圖阿拉",  memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                               trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1583/05", te:"1583/05", mj:"turun",               ch:"圖倫城",    memo:"금서춘추: 지금의 倉什伙洛(p.13)/抚顺县上马镇苍什村",                          trust:"B", lng:124.329315, lat:41.886574 },
-      { tb:"1583/06", te:"1583/07", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1583/08", te:"1583/08", mj:"giyaban",             ch:"嘉班城",    memo:"抚顺市东洲区碾盘乡甲邦村",                                                   trust:"A", lng:124.028648, lat:41.887167 },
-      { tb:"1583/09", te:"1583/12", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1584/01", te:"1584/01", mj:"joogiya (lidai)",     ch:"兆嘉城",    memo:"抚顺市新宾县木奇镇赵家村",                                                   trust:"A", lng:124.566107, lat:41.653033 },
-      { tb:"1584/02", te:"1584/05", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1584/06", te:"1584/06", mj:"mardun",              ch:"瑪爾墩寨",  memo:"抚顺市新宾县上夹河镇马尔墩村",                                               trust:"A", lng:124.556253, lat:41.815334 },
-      { tb:"1584/07", te:"1584/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1584/09", te:"1584/09", mj:"cigida",              ch:"齊吉達城",  memo:"《戰績圖》: 와르카시하의 하구 지역",                                          trust:"B", lng:125.325654, lat:41.292714 },
-      { tb:"1584/10", te:"1585/01", mj:"onggolo",             ch:"翁鄂洛城",  memo:"금서춘추: 桓仁 桓路溝, 橫道川 일대로 추정",                                  trust:"B", lng:125.566298, lat:41.239938 },
-      { tb:"1585/02", te:"1585/02", mj:"jaifiyan",            ch:"界藩城",    memo:"辽宁省抚顺市铁背山界藩山上",                                                 trust:"A", lng:124.300611, lat:41.925331 },
-      { tb:"1585/03", te:"1585/03", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1585/04", te:"1585/04", mj:"jaifiyan",            ch:"界藩城",    memo:"辽宁省抚顺市铁背山界藩山上",                                                 trust:"A", lng:124.300611, lat:41.925331 },
-      { tb:"1585/05", te:"1585/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1585/09", te:"1585/09", mj:"antu guwalgiya",      ch:"安圖瓜爾佳城", memo:"《戰績圖》: 자이피얀과 자카 사이, 숙수후강 북쪽 강변",                    trust:"B", lng:124.416424, lat:41.862651 },
-      { tb:"1585/10", te:"1586/04", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1586/05", te:"1586/05", mj:"boihon xanxin",       ch:"貝歡山寨",  memo:"《戰績圖》: 瑪前寨의 동쪽, 八家屯村 남쪽, 청하 남쪽 강변",                   trust:"B", lng:124.990815, lat:42.116152 },
-      { tb:"1586/06", te:"1586/06", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1586/07", te:"1586/07", mj:"tomohoi",             ch:"托摩輝城",  memo:"《戰績圖》: 자이피얀, 鐵背山 동쪽, 토모호이하 북쪽 강변",                    trust:"B", lng:124.343498, lat:41.907176 },
-      { tb:"1586/08", te:"1586/08", mj:"olhon",               ch:"鄂勒琿",    memo:"금서춘추: 范河 강변의 老邊臺 동남쪽, 干溝子로 비정(p.28)",                    trust:"C", lng:124.196553, lat:42.157138 },
-      { tb:"1586/09", te:"1586/12", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1587/01", te:"1587/07", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
-      { tb:"1587/08", te:"1587/08", mj:"dung",                ch:"洞城",      memo:"금서춘추: Jakdan 강의 상류 동쪽",                                            trust:"D", lng:124.467044, lat:42.039285 },
-      { tb:"1587/09", te:"1588/08", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844234, lat:41.667929 },
-      { tb:"1588/09", te:"1588/09", mj:"wanggiya",            ch:"",          memo:"금서춘추: 동가강과 신개하 합류점 상류 동가강 南岸",                           trust:"B", lng:125.685604, lat:41.34777  },
-      { tb:"1588/10", te:"1589/01", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
-      { tb:"1589/02", te:"1589/02", mj:"joogiya (ninggucin)", ch:"兆佳",      memo:"금서춘추: 동가강 하류 일대로 추정 (pp.47-49)",                               trust:"D", lng:125.152953, lat:40.934445 },
-      { tb:"1589/03", te:"1593/05", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
-      { tb:"1593/06", te:"1593/06", mj:"fulgiyaci",           ch:"富爾佳齊",  memo:"금서춘추: 하다성의 남쪽, 하다성과 채하성 중간(p.95)",                        trust:"C", lng:124.435977, lat:42.375329 },
-      { tb:"1593/06", te:"1593/08", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
-      { tb:"1593/09", te:"1593/09", mj:"jaka",                ch:"扎喀城",    memo:"新宾满族自治县上夹河镇五龙村",                                               trust:"A", lng:124.531478, lat:41.86329  },
-      { tb:"1593/10", te:"1595/05", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
-      { tb:"1595/06", te:"1595/06", mj:"dobi",                ch:"多璧城",    memo:"금서춘추: 호이파부 서쪽 거점, 호이하파 상류 유역 일대(p.100)",                trust:"C", lng:125.599392, lat:42.479242 },
-      { tb:"1595/07", te:"1599/08", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
-      { tb:"1599/09", te:"1599/09", mj:"hada",                ch:"哈達",      memo:"",                                                                          trust:"A", lng:124.581192, lat:42.445681 },
-      { tb:"1599/10", te:"1602/12", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
-      { tb:"1603/01", te:"1607/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                               trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1607/09", te:"1607/09", mj:"hoifa",               ch:"輝發",      memo:"",                                                                          trust:"A", lng:126.188308, lat:42.735451 },
-      { tb:"1607/10", te:"1612/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1612/09", te:"1612/09", mj:"ula",                 ch:"烏拉",      memo:"",                                                                          trust:"A", lng:126.479233, lat:44.072265 },
-      { tb:"1612/10", te:"1612/12", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.844056, lat:41.667596 },
-      { tb:"1613/01", te:"1613/01", mj:"ula",                 ch:"烏拉",      memo:"",                                                                          trust:"A", lng:126.479233, lat:44.072265 },
-      { tb:"1613/02", te:"1613/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1613/09", te:"1613/09", mj:"jang",                ch:"",          memo:"금서춘추: 여허성의 동북쪽 伊通 주변부로 비정(p.112)",                         trust:"C", lng:125.230875, lat:43.521089 },
-      { tb:"1613/10", te:"1618/03", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1618/04", te:"1618/05", mj:"撫順",                ch:"撫順",      memo:"",                                                                          trust:"A", lng:123.904248, lat:41.883858 },
-      { tb:"1618/06", te:"1618/06", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1618/07", te:"1618/07", mj:"清河",                ch:"清河",      memo:"",                                                                          trust:"A", lng:124.226344, lat:41.455132 },
-      { tb:"1618/08", te:"1618/12", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1619/01", te:"1619/01", mj:"yehe",                ch:"葉赫",      memo:"",                                                                          trust:"A", lng:124.525907, lat:42.936223 },
-      { tb:"1619/02", te:"1619/02", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1619/03", te:"1619/03", mj:"sarhv",               ch:"薩爾滸",    memo:"",                                                                          trust:"A", lng:124.24573,  lat:41.89632  },
-      { tb:"1619/04", te:"1619/05", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
-      { tb:"1619/06", te:"1619/06", mj:"開原",                ch:"開原",      memo:"",                                                                          trust:"A", lng:124.080798, lat:42.596315 },
-      { tb:"1619/07", te:"1619/07", mj:"鐵嶺",                ch:"鐵嶺",      memo:"",                                                                          trust:"A", lng:123.852866, lat:42.2955   },
-      { tb:"1619/08", te:"1619/08", mj:"yehe",                ch:"葉赫",      memo:"",                                                                          trust:"A", lng:124.525907, lat:42.936223 },
-      { tb:"1619/09", te:"1620/07", mj:"jaifiyan",            ch:"界藩城",    memo:"辽宁省抚顺市铁背山界藩山上",                                                 trust:"A", lng:124.300611, lat:41.925331 },
-      { tb:"1620/08", te:"1620/08", mj:"懿路",                ch:"懿路",      memo:"铁岭市铁岭县新台子镇懿路村",                                                 trust:"A", lng:123.649006, lat:42.098762 },
-      { tb:"1620/09", te:"1620/09", mj:"jaifiyan",            ch:"界藩城",    memo:"",                                                                          trust:"A", lng:124.300611, lat:41.925331 },
-      { tb:"1620/10", te:"1621/01", mj:"sarhv",               ch:"薩爾滸",    memo:"",                                                                          trust:"A", lng:124.24573,  lat:41.89632  },
-      { tb:"1621/02", te:"1621/02", mj:"奉集堡",              ch:"奉集堡",    memo:"沈阳市苏家屯区陈相屯街道奉集堡村",                                           trust:"A", lng:123.562122, lat:41.570441 },
-      { tb:"1621/03", te:"1621/03", mj:"瀋陽",                ch:"瀋陽",      memo:"",                                                                          trust:"A", lng:123.449491, lat:41.796076 },
-      { tb:"1621/04", te:"1621/12", mj:"遼陽",                ch:"遼陽",      memo:"",                                                                          trust:"A", lng:123.184847, lat:41.268281 },
-      { tb:"1622/01", te:"1622/01", mj:"廣寧",                ch:"廣寧",      memo:"",                                                                          trust:"A", lng:121.790165, lat:41.592868 },
-      { tb:"1622/02", te:"1622/02", mj:"塔山",                ch:"塔山",      memo:"",                                                                          trust:"A", lng:120.934744, lat:40.843561 },
-      { tb:"1622/03", te:"1622/03", mj:"遼陽",                ch:"遼陽",      memo:"",                                                                          trust:"A", lng:123.185035, lat:41.268122 },
-      { tb:"1622/04", te:"1625/02", mj:"東京",                ch:"東京城",    memo:"",                                                                          trust:"A", lng:123.234539, lat:41.275824 },
-      { tb:"1625/03", te:"1625/12", mj:"瀋陽",                ch:"瀋陽",      memo:"",                                                                          trust:"A", lng:123.449491, lat:41.796076 },
-      { tb:"1626/01", te:"1626/01", mj:"永遠",                ch:"永遠城",    memo:"",                                                                          trust:"A", lng:120.706549, lat:40.620814 },
-      { tb:"1626/02", te:"1626/03", mj:"瀋陽",                ch:"瀋陽",      memo:"",                                                                          trust:"A", lng:123.449491, lat:41.796076 },
-      { tb:"1626/04", te:"1626/04", mj:"kalka",               ch:"喀爾喀",    memo:"후훈하의 서북쪽 일대에서 칼카를 정벌했던 것으로 추정됨",                     trust:"B", lng:120.990483, lat:42.684107 },
-      { tb:"1626/05", te:"1626/06", mj:"瀋陽",                ch:"瀋陽",      memo:"",                                                                          trust:"A", lng:123.449491, lat:41.796076 },
-      { tb:"1626/07", te:"1626/07", mj:"清河",                ch:"清河",      memo:"",                                                                          trust:"A", lng:124.226344, lat:41.455132 },
-      { tb:"1626/08", te:"1626/08", mj:"ai gi bu",            ch:"靉雞堡",    memo:"沈阳市铁西区大青中朝友谊街道大挨金堡村",                                     trust:"A", lng:123.205006, lat:41.684234 },
+      { tb:"1583/01", te:"1583/04", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1583/05", te:"1583/05", mj:"turun i hoton",                     ch:"圖倫城",             memo:"今西春秋: 지금의 倉什伙洛(p.13)/抚顺县上马镇苍什村",                                                                                                                   trust:"B", lng:124.329315, lat:41.886574 },
+      { tb:"1583/06", te:"1583/07", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1583/08", te:"1583/08", mj:"giyaban hoton",                     ch:"嘉班城",             memo:"抚顺市东洲区碾盘乡甲邦村",                                                                                                                                             trust:"A", lng:124.028648, lat:41.887167 },
+      { tb:"1583/09", te:"1583/12", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1584/01", te:"1584/01", mj:"joogiya hoton (lidai)",              ch:"兆嘉城",             memo:"抚顺市新宾县木奇镇赵家村",                                                                                                                                             trust:"A", lng:124.566107, lat:41.653033 },
+      { tb:"1584/02", te:"1584/05", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1584/06", te:"1584/06", mj:"mardun i hecen",                    ch:"瑪爾墩寨",          memo:"抚顺市新宾县上夹河镇马尔墩村",                                                                                                                                         trust:"A", lng:124.556253, lat:41.815334 },
+      { tb:"1584/07", te:"1584/08", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1584/09", te:"1584/09", mj:"cigida hoton",                      ch:"齊吉達城",          memo:"《戰績圖》: 와르카시하의 하구 지역/《十萬分之一圖》: 古城子",                                                                                                          trust:"B", lng:125.325654, lat:41.292714 },
+      { tb:"1584/10", te:"1585/01", mj:"onggolo i hoton",                   ch:"翁鄂洛城",          memo:"今西春秋: 옹고로천은 지금의 桓仁 桓路溝, 橫道川의 물줄기(p.69)/옹골로성은 橫道川 일대에 위치했을 것으로 추정",                                                        trust:"B", lng:125.566298, lat:41.239938 },
+      { tb:"1585/02", te:"1585/02", mj:"jaifiyan",                          ch:"界藩",               memo:"辽宁省抚顺市铁背山界藩山上",                                                                                                                                           trust:"A", lng:124.300611, lat:41.925331 },
+      { tb:"1585/03", te:"1585/03", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1585/04", te:"1585/04", mj:"jaifiyan",                          ch:"界藩",               memo:"辽宁省抚顺市铁背山界藩山上",                                                                                                                                           trust:"A", lng:124.300611, lat:41.925331 },
+      { tb:"1585/05", te:"1585/08", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1585/09", te:"1585/09", mj:"antu gvwalgiya hoton",              ch:"安圖瓜爾佳城",      memo:"《戰績圖》: 자이피얀과 자카의 사이, 숙수후강의 북쪽 강변에 위치. 대략 지금의 腰站 또는 下夾河 일대로 추정됨/抚顺市新宾县上夹河镇腰站村",                             trust:"B", lng:124.416424, lat:41.862651 },
+      { tb:"1585/10", te:"1586/04", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1586/05", te:"1586/05", mj:"boihon xancin",                     ch:"貝歡山寨",          memo:"《戰績圖》: 瑪前寨의 동쪽, 八家屯村(지금의 청원현)의 남쪽, 청하의 남쪽 강변에 위치/《十萬分之一圖》: 山城子/今西春秋는 이곳을 joogiya로 비정했으나 오류로 보임",   trust:"B", lng:124.990815, lat:42.116152 },
+      { tb:"1586/06", te:"1586/06", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1586/07", te:"1586/07", mj:"tomohoi hoton",                     ch:"托摩輝城",          memo:"《戰績圖》: 자이피얀, 鐵背山의 동쪽, 토모호이하의 북쪽 강변에 위치",                                                                                                  trust:"A", lng:124.343498, lat:41.907176 },
+      { tb:"1586/08", te:"1586/08", mj:"olhon i hoton",                     ch:"鄂勒琿",             memo:"今西春秋: 范河 강변의 老邊臺 동남쪽, 干溝子로 비정(p.28)",                                                                                                            trust:"C", lng:124.196553, lat:42.157138 },
+      { tb:"1586/09", te:"1586/12", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1587/01", te:"1587/07", mj:"fe ala",                            ch:"佛阿拉",             memo:"新宾县永陵镇二道村",                                                                                                                                                   trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1587/08", te:"1587/08", mj:"dung ni hoton",                     ch:"洞城",               memo:"今西春秋: Jakdan 강의 상류 동쪽. 허투알라와 하다를 잇는 교통 노선 중 하나(p.42)",                                                                                     trust:"D", lng:124.467044, lat:42.039285 },
+      { tb:"1587/09", te:"1588/08", mj:"fe ala",                            ch:"佛阿拉",             memo:"新宾县永陵镇二道村",                                                                                                                                                   trust:"A", lng:124.844234, lat:41.667929 },
+      { tb:"1588/09", te:"1588/09", mj:"wanggiya hoton",                    ch:"完顏城",             memo:"今西春秋: 동가강과 신개하의 합류점에서 약간 상류 쪽 동가강 南岸의 땅(p.69)",                                                                                          trust:"B", lng:125.685604, lat:41.34777  },
+      { tb:"1588/10", te:"1589/01", mj:"fe ala",                            ch:"佛阿拉",             memo:"新宾县永陵镇二道村",                                                                                                                                                   trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1589/02", te:"1589/02", mj:"joogiyai hoton (ninggucin)",        ch:"兆佳",               memo:"今西春秋: 닝구친의 조오기야는 리다이의 조오기야와는 동명의 다른 성. 조오기야는 동고, 야르구, 수완 보다 더욱 동가강 하류에 위치했을 것으로 추정. (pp.47-49. 75-76)", trust:"D", lng:125.152953, lat:40.934445 },
+      { tb:"1589/03", te:"1593/05", mj:"fe ala",                            ch:"佛阿拉",             memo:"新宾县永陵镇二道村",                                                                                                                                                   trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1593/06", te:"1593/06", mj:"fulgiyaci gaxan (hada)",            ch:"富爾佳齊村(哈達)",  memo:"今西春秋: 하다성의 남쪽, 하다성과 채하성의 중간 부분(p.95)",                                                                                                           trust:"C", lng:124.435977, lat:42.375329 },
+      { tb:"1593/06", te:"1593/08", mj:"fe ala",                            ch:"佛阿拉",             memo:"新宾县永陵镇二道村",                                                                                                                                                   trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1593/09", te:"1593/09", mj:"jaka hoton",                        ch:"扎喀城",             memo:"新宾满族自治县上夹河镇五龙村",                                                                                                                                         trust:"A", lng:124.531478, lat:41.86329  },
+      { tb:"1593/10", te:"1595/05", mj:"fe ala",                            ch:"佛阿拉",             memo:"新宾县永陵镇二道村",                                                                                                                                                   trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1595/06", te:"1595/06", mj:"dobi hoton",                        ch:"多璧城",             memo:"今西春秋: 호이파부의 비교적 서쪽 거점으로 추정. 호이하파 상류 유역 일대로 비정(p.100)/《戰績圖》에는 호이파의 서쪽에 邦塞城(bangse hoton)이라는 고성이 하나 그려져 있음. 이 일대로 추정되나 근거 부족.", trust:"C", lng:125.599392, lat:42.479242 },
+      { tb:"1595/07", te:"1599/08", mj:"fe ala",                            ch:"佛阿拉",             memo:"新宾县永陵镇二道村",                                                                                                                                                   trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1599/09", te:"1599/09", mj:"hada hoton",                        ch:"哈達城",             memo:"铁岭市开原市八棵树镇古城子村",                                                                                                                                         trust:"A", lng:124.581192, lat:42.445681 },
+      { tb:"1599/10", te:"1602/12", mj:"fe ala",                            ch:"佛阿拉",             memo:"新宾县永陵镇二道村",                                                                                                                                                   trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1603/01", te:"1604/03", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1604/04", te:"1604/04", mj:"jang hoton, akiran hoton (yehe)",   ch:"璋, 阿奇蘭(葉赫)", memo:"今西春秋: 여허의 가장 동쪽, 동남쪽 변경지대로 파악하였음. 지금의 伊通河 일대로 비정(pp.115-118)",                                                                     trust:"C", lng:125.480403, lat:43.180058 },
+      { tb:"1604/05", te:"1607/08", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1607/09", te:"1607/09", mj:"hoifa hoton",                       ch:"輝發城",             memo:"辉南县朝阳镇东北约17公里的辉发山",                                                                                                                                     trust:"A", lng:126.188308, lat:42.735451 },
+      { tb:"1607/10", te:"1612/08", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1612/09", te:"1612/09", mj:"ula hoton",                         ch:"烏拉城",             memo:"吉林市龙潭区乌拉街镇旧街村，松花江东岸",                                                                                                                               trust:"A", lng:126.479233, lat:44.072265 },
+      { tb:"1612/10", te:"1612/12", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1613/01", te:"1613/01", mj:"ula hoton",                         ch:"烏拉城",             memo:"吉林市龙潭区乌拉街镇旧街村，松花江东岸",                                                                                                                               trust:"A", lng:126.479233, lat:44.072265 },
+      { tb:"1613/02", te:"1613/08", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1613/09", te:"1613/09", mj:"yaha hoton, hersu hoton (yehe)",    ch:"雅哈城, 克爾蘇城", memo:"jang, gidangga, usu, yahai, hersu, hodun, kabcila, ogida 등/今西春秋: 여허성의 동북쪽 伊通 주변부로 비정(p.112)",                                                       trust:"C", lng:124.824186, lat:43.195987 },
+      { tb:"1613/10", te:"1618/03", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1618/04", te:"1618/05", mj:"fuxun",                             ch:"撫順",               memo:"抚顺市区高尔山南麓一带",                                                                                                                                               trust:"A", lng:123.904248, lat:41.883858 },
+      { tb:"1618/06", te:"1618/06", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1618/07", te:"1618/07", mj:"cing ho hecen",                     ch:"清河",               memo:"本溪县县城以北约35公里处",                                                                                                                                             trust:"A", lng:124.226344, lat:41.455132 },
+      { tb:"1618/08", te:"1618/12", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1619/01", te:"1619/01", mj:"yehe hoton",                        ch:"葉赫城",             memo:"吉林省四平市铁东区叶赫满族镇",                                                                                                                                         trust:"A", lng:124.525907, lat:42.936223 },
+      { tb:"1619/02", te:"1619/02", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1619/03", te:"1619/03", mj:"sarhv",                             ch:"薩爾滸",             memo:"抚顺市抚顺县上马镇东20公里的大伙房水库东部南岸",                                                                                                                       trust:"A", lng:124.24573,  lat:41.89632  },
+      { tb:"1619/04", te:"1619/05", mj:"hetu ala hecen",                    ch:"赫圖阿拉",          memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                                                                                                                         trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1619/06", te:"1619/06", mj:"ckai yuwan i hecen",                ch:"開原",               memo:"铁岭开原市老城镇",                                                                                                                                                     trust:"A", lng:124.080798, lat:42.596315 },
+      { tb:"1619/07", te:"1619/07", mj:"tiyei ling",                        ch:"鐵嶺",               memo:"辽宁省铁岭市银州区",                                                                                                                                                   trust:"A", lng:123.852866, lat:42.2955   },
+      { tb:"1619/08", te:"1619/08", mj:"yehe hoton",                        ch:"葉赫城",             memo:"吉林省四平市铁东区叶赫满族镇",                                                                                                                                         trust:"A", lng:124.525907, lat:42.936223 },
+      { tb:"1619/09", te:"1620/07", mj:"jaifiyan",                          ch:"界藩",               memo:"辽宁省抚顺市铁背山界藩山上",                                                                                                                                           trust:"A", lng:124.300611, lat:41.925331 },
+      { tb:"1620/08", te:"1620/08", mj:"ilu",                               ch:"懿路",               memo:"铁岭市铁岭县新台子镇懿路村",                                                                                                                                           trust:"A", lng:123.649006, lat:42.098762 },
+      { tb:"1620/09", te:"1620/09", mj:"jaifiyan",                          ch:"界藩",               memo:"辽宁省抚顺市铁背山界藩山上",                                                                                                                                           trust:"A", lng:124.300611, lat:41.925331 },
+      { tb:"1620/10", te:"1621/01", mj:"sarhv",                             ch:"薩爾滸",             memo:"抚顺市抚顺县上马镇东20公里的大伙房水库东部南岸",                                                                                                                       trust:"A", lng:124.24573,  lat:41.89632  },
+      { tb:"1621/02", te:"1621/02", mj:"fung ji pu",                        ch:"奉集堡",             memo:"沈阳市苏家屯区陈相屯街道奉集堡村",                                                                                                                                     trust:"A", lng:123.562122, lat:41.570441 },
+      { tb:"1621/03", te:"1621/03", mj:"xen yang hecen",                    ch:"瀋陽",               memo:"沈阳市沈河区",                                                                                                                                                         trust:"A", lng:123.449491, lat:41.796076 },
+      { tb:"1621/04", te:"1621/12", mj:"liyoodung",                         ch:"遼東",               memo:"辽宁省辽阳市",                                                                                                                                                         trust:"A", lng:123.184847, lat:41.268281 },
+      { tb:"1622/01", te:"1622/01", mj:"guwangning",                        ch:"廣寧",               memo:"锦州市北镇市镇内",                                                                                                                                                     trust:"A", lng:121.790165, lat:41.592868 },
+      { tb:"1622/02", te:"1622/02", mj:"ta xan",                            ch:"塔山",               memo:"葫芦岛市连山区的塔山堡古城",                                                                                                                                           trust:"A", lng:120.934744, lat:40.843561 },
+      { tb:"1622/03", te:"1622/03", mj:"liyoodung",                         ch:"遼東",               memo:"辽宁省辽阳市",                                                                                                                                                         trust:"A", lng:123.185035, lat:41.268122 },
+      { tb:"1622/04", te:"1625/02", mj:"dung ging",                         ch:"東京",               memo:"辽宁省辽阳东",                                                                                                                                                         trust:"A", lng:123.234539, lat:41.275824 },
+      { tb:"1625/03", te:"1625/12", mj:"xen yang hecen",                    ch:"瀋陽",               memo:"沈阳市沈河区",                                                                                                                                                         trust:"A", lng:123.449491, lat:41.796076 },
+      { tb:"1626/01", te:"1626/01", mj:"ning yuwan",                        ch:"寧遠",               memo:"葫芦岛市兴城市老城区中心",                                                                                                                                             trust:"A", lng:120.706549, lat:40.620814 },
+      { tb:"1626/02", te:"1626/03", mj:"xen yang hecen",                    ch:"瀋陽",               memo:"沈阳市沈河区",                                                                                                                                                         trust:"A", lng:123.449491, lat:41.796076 },
+      { tb:"1626/04", te:"1626/04", mj:"kalka monggo",                      ch:"喀爾喀蒙古",        memo:"후훈하의 서북쪽 일대에서 칼카를 정벌했던 것으로 추정됨",                                                                                                               trust:"B", lng:120.990483, lat:42.684107 },
+      { tb:"1626/05", te:"1626/06", mj:"xen yang hecen",                    ch:"瀋陽",               memo:"沈阳市沈河区",                                                                                                                                                         trust:"A", lng:123.449491, lat:41.796076 },
+      { tb:"1626/07", te:"1626/07", mj:"cing ho hecen",                     ch:"清河",               memo:"本溪县县城以北约35公里处",                                                                                                                                             trust:"A", lng:124.226344, lat:41.455132 },
+      { tb:"1626/08", te:"1626/08", mj:"ai gi bu",                          ch:"靉雞堡",             memo:"沈阳市铁西区大青中朝友谊街道大挨金堡村",                                                                                                                               trust:"A", lng:123.205006, lat:41.684234 },
     ];
 
     // 누르하치 년/월 → 인덱스
@@ -1091,30 +1112,63 @@
       return found;
     }
 
-    // 누르하치 초상 아이콘
+    // 누르하치 초상 아이콘 — 말풍선(speech bubble) 모양: 원형 초상 + 중앙 하단 삼각 꼭지
     const NH_PORTRAIT = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Nurhaci.jpg/120px-Nurhaci.jpg';
     function makeNhIcon(trust) {
       const bc = {A:'#6ab04c',B:'#d4a855',C:'#c07030',D:'#a04040'}[trust]||'#c8a040';
-      const s = 44, tip = 12;
+      const s = 48;   // 원 지름(px)
+      const b = 3;    // 테두리 두께
+      const tip = 14; // 꼭지 높이
+      const tw = 12;  // 꼭지 밑변 너비
+      // 꼭지: 원의 수평 중앙 정렬, SVG 좌표계에서 x=s/2
+      const tx = s / 2;
       return L.divIcon({
-        html: `<div style="position:relative;width:${s}px;height:${s+tip}px;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.6))">
-          <div style="position:absolute;bottom:${tip}px;left:0;width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;border:3px solid ${bc};background:#2a1a0a;">
+        html: `<div style="position:relative;width:${s}px;height:${s+tip}px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.65))">
+          <!-- 원형 초상 -->
+          <div style="position:absolute;top:0;left:0;width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;border:${b}px solid ${bc};background:#2a1a0a;box-sizing:border-box;">
             <img src="${NH_PORTRAIT}" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.display='none'"/>
           </div>
-          <svg style="position:absolute;bottom:0;left:0" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${tip+2}">
-            <polygon points="0,0 ${s*0.22},${tip} ${s*0.08},0" fill="${bc}"/>
+          <!-- 중앙 하단 꼭지 -->
+          <svg style="position:absolute;bottom:0;left:0;overflow:visible" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${tip}">
+            <polygon points="${tx-tw/2},0 ${tx},${tip} ${tx+tw/2},0" fill="${bc}"/>
           </svg>
         </div>`,
         className: '',
-        iconSize: [s, s+tip],
-        iconAnchor: [7, s+tip],
-        popupAnchor: [s/2-7, -(s+tip)],
+        iconSize: [s, s + tip],
+        iconAnchor: [s / 2, s + tip],   // 꼭지 끝 = 지도 좌표
+        popupAnchor: [0, -(s + tip)],
       });
     }
 
     let nhMarker = null;
     let nhCurrentIdx = NH_IDX_MIN;
     let nhActive = false;   // 누르하치 기능 온/오프
+    let nhPlayTimer = null; // 플레이 타이머
+
+    function nhStopPlay() {
+      if (nhPlayTimer) { clearInterval(nhPlayTimer); nhPlayTimer = null; }
+      const btn = document.getElementById('tlNhPlayBtn');
+      if (btn) btn.textContent = '▶';
+    }
+
+    function nhStartPlay() {
+      if (nhPlayTimer) return; // 이미 재생 중
+      const btn = document.getElementById('tlNhPlayBtn');
+      if (btn) btn.textContent = '⏸';
+      nhPlayTimer = setInterval(() => {
+        if (nhCurrentIdx >= NH_IDX_MAX) {
+          nhStopPlay();
+          return;
+        }
+        nhCurrentIdx++;
+        const sl = document.getElementById('tlNhRange');
+        if (sl) {
+          sl.value = nhCurrentIdx;
+          sl.style.setProperty('--pct', (nhCurrentIdx / NH_IDX_MAX * 100) + '%');
+        }
+        nhUpdateMarker(nhCurrentIdx);
+      }, 250);
+    }
 
     function nhUpdateMarker(idx) {
       if (!nhActive) return;
@@ -1164,11 +1218,31 @@
         tc.appendChild(d);
       }
       sl.addEventListener('input', () => {
+        nhStopPlay(); // 슬라이더 수동 조작 시 재생 중지
         nhCurrentIdx = parseInt(sl.value);
         const pct = (nhCurrentIdx / NH_IDX_MAX) * 100;
         sl.style.setProperty('--pct', pct + '%');
         nhUpdateMarker(nhCurrentIdx);
       });
+
+      // 플레이 버튼
+      const playBtn = document.getElementById('tlNhPlayBtn');
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          if (nhPlayTimer) {
+            nhStopPlay();
+          } else {
+            // 끝까지 갔으면 처음부터
+            if (nhCurrentIdx >= NH_IDX_MAX) {
+              nhCurrentIdx = NH_IDX_MIN;
+              sl.value = nhCurrentIdx;
+              sl.style.setProperty('--pct', '0%');
+              nhUpdateMarker(nhCurrentIdx);
+            }
+            nhStartPlay();
+          }
+        });
+      }
     }
 
     // 누르하치 년/월 직접 입력
@@ -1470,7 +1544,7 @@
           karunTlActive = false; showTimelineBar();
         }
         if (e.layer === nhDummyLayer) {
-          nhActive = false; showTimelineBar(); nhRemoveMarker();
+          nhActive = false; nhStopPlay(); showTimelineBar(); nhRemoveMarker();
         }
       });
 
