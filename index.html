@@ -1481,9 +1481,9 @@
       const wpqianlong_bundle = L.layerGroup([wpqianlong, wp_gate_ql_pts]);
 
       // 장성 & 요동변장
-      const greatwallLayer   = await loadGeoJSON('./data/greatwall_line.geojson',   { style: { color: '#d8d0c0', weight: 3.5, opacity: 0.9 } });
+      const greatwallLayer   = await loadGeoJSON('./data/greatwall_line.geojson',   { style: { color: '#ede8de', weight: 3.5, opacity: 0.95 } });
       greatwallLayer.addTo(map);
-      const liaodongWallLayer = await loadGeoJSON('./data/liaodong_wall.geojson',   { style: { color: '#d8d0c0', weight: 3.5, opacity: 0.9 } });
+      const liaodongWallLayer = await loadGeoJSON('./data/liaodong_wall.geojson',   { style: { color: '#ede8de', weight: 3, opacity: 0.95, dashArray: '8,5' } });
       // 요동변장은 초기 off
 
       // 누르하치 더미 레이어 (체크박스 생성용, 실제 표시는 nhMarker로 별도 관리)
@@ -1494,12 +1494,12 @@
       const groupedOverlays = {
         "기본지리정보": {
           [`${lineSvg('#000')}성경장군 관할 경계선`]:  admin_v1,
-          [`${lineSvg('#d8d0c0')}장성`]:               greatwallLayer,
+          [`${lineSvg('#ede8de')}장성`]:               greatwallLayer,
           [`${dotSvg('#004eff')}행정 지명(lv1/lv2)`]: admin_pts,
           [`${dotSvg('#888')}역참`]:                   giyamun_pt
         },
         "요동변장&유조변": {
-          [`${lineSvg('#d8d0c0')}요동변장`]:            liaodongWallLayer,
+          [`${lineSvg('#ede8de')}요동변장`]:            liaodongWallLayer,
           [`${lineSvg('#d60000')}유조변(강희-옹정)`]:  wpkangxi_bundle,
           [`${lineSvg('#d60000')}유조변(건륭이후)`]:   wpqianlong_bundle
         },
