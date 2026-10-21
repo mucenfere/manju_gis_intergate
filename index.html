@@ -1585,49 +1585,73 @@
       let nhAllLocsGroup = null;   // L.layerGroup, 체크박스 ON일 때 map에 추가
 
       function nhBuildAllLocs() {
-        const byCoord = new Map(); // "lng,lat" → { rec(대표), periods:[] }
+        const byCoord = new Map(); // "lng,lat" → { bestTrust, mj(대표), ch(대표), periods:[] }
         for (const r of NH_RECORDS) {
           const key = `${r.lng},${r.lat}`;
           if (!byCoord.has(key)) {
-            byCoord.set(key, { rec: r, periods: [] });
+            byCoord.set(key, { rec: r, bestTrust: r.trust, periods: [] });
+          } else {
+            const rank = {A:0,B:1,C:2,D:3};
+            const cur = byCoord.get(key);
+            if ((rank[r.trust]??4) < (rank[cur.bestTrust]??4)) cur.bestTrust = r.trust;
           }
           byCoord.get(key).periods.push({ tb: r.tb, te: r.te, mj: r.mj, ch: r.ch });
         }
 
         nhAllLocsGroup = L.layerGroup();
-        byCoord.forEach(({ rec, periods }) => {
-          // 신뢰도 중 가장 높은 것으로 테두리 색 결정
-          const bestTrust = periods.reduce((best, p) => {
-            const rank = {A:0,B:1,C:2,D:3};
-            const r2 = NH_RECORDS.find(r => r.tb===p.tb && r.te===p.te);
-            return (rank[r2?.trust??'D'] < rank[best]) ? (r2?.trust??best) : best;
-          }, 'D');
+        byCoord.forEach(({ rec, bestTrust, periods }) => {
+          const latlng = [rec.lat, rec.lng];
 
-          const bc = {A:'#6ab04c',B:'#d4a855',C:'#c07030',D:'#a04040'}[bestTrust]||'#c8a040';
-          const s = 10;
-          const icon = L.divIcon({
-            html: `<div style="width:${s}px;height:${s}px;border-radius:50%;background:${bc};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>`,
+          // ── 말풍선 아이콘 (makeNhIcon 재사용) ──
+          const bubbleIcon = makeNhIcon(bestTrust);
+
+          // ── 검정 점 아이콘 ──
+          const dotIcon = L.divIcon({
+            html: `<div style="width:6px;height:6px;border-radius:50%;background:#111;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.6)"></div>`,
             className: '',
-            iconSize: [s, s],
-            iconAnchor: [s/2, s/2],
-            popupAnchor: [0, -s/2]
+            iconSize: [6, 6],
+            iconAnchor: [3, 3],
           });
 
-          // 팝업: 만주어 지명 + 방문 기간 목록
+          // ── 만주어 라벨 아이콘 ──
+          const labelIcon = L.divIcon({
+            html: `<div style="
+              white-space:nowrap;font-size:11px;font-weight:600;color:#111;
+              text-shadow:1px 1px 0 #fff,-1px 1px 0 #fff,1px -1px 0 #fff,-1px -1px 0 #fff,
+                          0 1px 0 #fff,0 -1px 0 #fff,1px 0 0 #fff,-1px 0 0 #fff;
+              pointer-events:none;user-select:none;padding-left:4px;
+            ">${rec.mj}</div>`,
+            className: '',
+            iconSize: null,
+            iconAnchor: [0, -4],
+          });
+
+          // 팝업: 만주어/한자 지명 + 방문 기간 목록
           const nameDisplay = rec.ch ? `${rec.mj} / ${rec.ch}` : rec.mj;
           const periodRows = periods.map(p => {
             const label = p.tb === p.te ? p.tb : `${p.tb} – ${p.te}`;
-            return `<li style="padding:1px 0">${label}</li>`;
+            const name = p.ch ? `${p.mj} / ${p.ch}` : p.mj;
+            return `<li style="padding:1px 0"><span style="color:#666">${label}</span>　${name}</li>`;
           }).join('');
           const popupHtml = `
-            <div style="min-width:160px;max-width:240px;font-size:12px;line-height:1.5">
-              <div style="font-weight:700;font-size:13px;margin-bottom:4px">${nameDisplay}</div>
-              <ul style="margin:0;padding-left:16px;color:#444">${periodRows}</ul>
+            <div style="min-width:170px;max-width:280px;font-size:12px;line-height:1.6;font-family:sans-serif">
+              <div style="font-weight:700;font-size:13px;margin-bottom:5px">${nameDisplay}</div>
+              <ul style="margin:0;padding-left:14px;color:#333">${periodRows}</ul>
             </div>`;
 
-          const marker = L.marker([rec.lat, rec.lng], { icon });
-          marker.bindPopup(popupHtml, { maxWidth: 260 });
-          nhAllLocsGroup.addLayer(marker);
+          // 말풍선 마커 (클릭 가능 → 팝업)
+          const bubbleMarker = L.marker(latlng, { icon: bubbleIcon, zIndexOffset: 1500 });
+          bubbleMarker.bindPopup(popupHtml, { maxWidth: 300 });
+
+          // 점 마커 (non-interactive)
+          const dotMarker = L.marker(latlng, { icon: dotIcon, zIndexOffset: 1400, interactive: false });
+
+          // 라벨 마커 (non-interactive)
+          const labelMarker = L.marker(latlng, { icon: labelIcon, zIndexOffset: 1300, interactive: false });
+
+          nhAllLocsGroup.addLayer(dotMarker);
+          nhAllLocsGroup.addLayer(labelMarker);
+          nhAllLocsGroup.addLayer(bubbleMarker);
         });
       }
 
