@@ -1141,6 +1141,8 @@
     }
 
     let nhMarker = null;
+    let nhDotMarker = null;   // 지점 검정 점
+    let nhLabelMarker = null; // 만주어 지명 라벨
     let nhCurrentIdx = NH_IDX_MIN;
     let nhActive = false;   // 누르하치 기능 온/오프
     let nhPlayTimer = null; // 플레이 타이머
@@ -1170,6 +1172,32 @@
       }, 250);
     }
 
+    // 검정 점 아이콘 (6px)
+    const nhDotIcon = L.divIcon({
+      html: `<div style="width:6px;height:6px;border-radius:50%;background:#111;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.6)"></div>`,
+      className: '',
+      iconSize: [6, 6],
+      iconAnchor: [3, 3],
+    });
+
+    function nhMakeLabelIcon(text) {
+      return L.divIcon({
+        html: `<div style="
+          white-space:nowrap;
+          font-size:11px;
+          font-weight:600;
+          color:#111;
+          text-shadow:1px 1px 0 #fff,-1px 1px 0 #fff,1px -1px 0 #fff,-1px -1px 0 #fff,0 1px 0 #fff,0 -1px 0 #fff,1px 0 0 #fff,-1px 0 0 #fff;
+          pointer-events:none;
+          user-select:none;
+          padding-left:4px;
+        ">${text}</div>`,
+        className: '',
+        iconSize: null,
+        iconAnchor: [0, -4],   // 점 바로 우상단
+      });
+    }
+
     function nhUpdateMarker(idx) {
       if (!nhActive) return;
       const rec = nhGetRecord(idx);
@@ -1182,12 +1210,32 @@
         <div style="font-size:11px;color:#aaa;margin-top:3px">${rec.tb} ~ ${rec.te}</div>
         ${rec.memo ? `<div style="font-size:11px;margin-top:5px;border-top:1px solid #eee;padding-top:4px">${rec.memo}</div>` : ''}
       </div>`;
+
+      // 말풍선 마커
       if (!nhMarker) {
         nhMarker = L.marker(latlng, { icon, zIndexOffset: 2000 }).addTo(map).bindPopup(popup);
       } else {
         nhMarker.setLatLng(latlng).setIcon(icon).setPopupContent(popup);
         if (!map.hasLayer(nhMarker)) nhMarker.addTo(map);
       }
+
+      // 검정 점
+      if (!nhDotMarker) {
+        nhDotMarker = L.marker(latlng, { icon: nhDotIcon, zIndexOffset: 1900, interactive: false }).addTo(map);
+      } else {
+        nhDotMarker.setLatLng(latlng);
+        if (!map.hasLayer(nhDotMarker)) nhDotMarker.addTo(map);
+      }
+
+      // 만주어 지명 라벨
+      const labelIcon = nhMakeLabelIcon(rec.mj);
+      if (!nhLabelMarker) {
+        nhLabelMarker = L.marker(latlng, { icon: labelIcon, zIndexOffset: 1800, interactive: false }).addTo(map);
+      } else {
+        nhLabelMarker.setLatLng(latlng).setIcon(labelIcon);
+        if (!map.hasLayer(nhLabelMarker)) nhLabelMarker.addTo(map);
+      }
+
       // 입력창 동기화
       const inp = document.getElementById('tlNhInput');
       if (inp && document.activeElement !== inp) inp.value = nhIdxToYm(idx);
@@ -1195,6 +1243,8 @@
 
     function nhRemoveMarker() {
       if (nhMarker && map.hasLayer(nhMarker)) map.removeLayer(nhMarker);
+      if (nhDotMarker && map.hasLayer(nhDotMarker)) map.removeLayer(nhDotMarker);
+      if (nhLabelMarker && map.hasLayer(nhLabelMarker)) map.removeLayer(nhLabelMarker);
     }
 
     // 누르하치 슬라이더 구성
@@ -1437,6 +1487,8 @@
 
       // 누르하치 더미 레이어 (체크박스 생성용, 실제 표시는 nhMarker로 별도 관리)
       const nhDummyLayer = L.layerGroup();
+      // 누르하치 전체 위치 더미 레이어
+      const nhAllLocsDummyLayer = L.layerGroup();
 
       const groupedOverlays = {
         "기본지리정보": {
@@ -1455,8 +1507,9 @@
           [`${dotSvg('#000')}인문지명`]:   chgistwn_pts
         },
         "시계열": {
-          [`⏱ 카룬 시계열 (1644–1850)`]: L.layerGroup(),
-          [`👤 누르하치의 위치 (1583–1626)`]: nhDummyLayer
+          [`카룬 시계열 (1644–1850)`]: L.layerGroup(),
+          [`누르하치의 이동 (1583–1626)`]: nhDummyLayer,
+          [`누르하치의 위치 (1583–1626)`]: nhAllLocsDummyLayer
         }
       };
 
@@ -1527,9 +1580,62 @@
       // ── 누르하치 슬라이더 초기화 ──
       nhBuildSlider();
 
+      // ── 누르하치 전체 위치 레이어 ──
+      // 중복 좌표 제거: lng+lat를 키로 대표 레코드 보관, 방문 기간 목록 누적
+      let nhAllLocsGroup = null;   // L.layerGroup, 체크박스 ON일 때 map에 추가
+
+      function nhBuildAllLocs() {
+        const byCoord = new Map(); // "lng,lat" → { rec(대표), periods:[] }
+        for (const r of NH_RECORDS) {
+          const key = `${r.lng},${r.lat}`;
+          if (!byCoord.has(key)) {
+            byCoord.set(key, { rec: r, periods: [] });
+          }
+          byCoord.get(key).periods.push({ tb: r.tb, te: r.te, mj: r.mj, ch: r.ch });
+        }
+
+        nhAllLocsGroup = L.layerGroup();
+        byCoord.forEach(({ rec, periods }) => {
+          // 신뢰도 중 가장 높은 것으로 테두리 색 결정
+          const bestTrust = periods.reduce((best, p) => {
+            const rank = {A:0,B:1,C:2,D:3};
+            const r2 = NH_RECORDS.find(r => r.tb===p.tb && r.te===p.te);
+            return (rank[r2?.trust??'D'] < rank[best]) ? (r2?.trust??best) : best;
+          }, 'D');
+
+          const bc = {A:'#6ab04c',B:'#d4a855',C:'#c07030',D:'#a04040'}[bestTrust]||'#c8a040';
+          const s = 10;
+          const icon = L.divIcon({
+            html: `<div style="width:${s}px;height:${s}px;border-radius:50%;background:${bc};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>`,
+            className: '',
+            iconSize: [s, s],
+            iconAnchor: [s/2, s/2],
+            popupAnchor: [0, -s/2]
+          });
+
+          // 팝업: 만주어 지명 + 방문 기간 목록
+          const nameDisplay = rec.ch ? `${rec.mj} / ${rec.ch}` : rec.mj;
+          const periodRows = periods.map(p => {
+            const label = p.tb === p.te ? p.tb : `${p.tb} – ${p.te}`;
+            return `<li style="padding:1px 0">${label}</li>`;
+          }).join('');
+          const popupHtml = `
+            <div style="min-width:160px;max-width:240px;font-size:12px;line-height:1.5">
+              <div style="font-weight:700;font-size:13px;margin-bottom:4px">${nameDisplay}</div>
+              <ul style="margin:0;padding-left:16px;color:#444">${periodRows}</ul>
+            </div>`;
+
+          const marker = L.marker([rec.lat, rec.lng], { icon });
+          marker.bindPopup(popupHtml, { maxWidth: 260 });
+          nhAllLocsGroup.addLayer(marker);
+        });
+      }
+
+      nhBuildAllLocs();
+
       // ── 시계열 더미 레이어 이벤트로 체크박스 감지 ──
       // groupedLayers 컨트롤이 체크박스 체크 시 map에 layer를 add/remove함
-      const karunDummyLayer = groupedOverlays['시계열'][`⏱ 카룬 시계열 (1644–1850)`];
+      const karunDummyLayer = groupedOverlays['시계열'][`카룬 시계열 (1644–1850)`];
 
       map.on('layeradd', e => {
         if (e.layer === karunDummyLayer) {
@@ -1538,6 +1644,9 @@
         if (e.layer === nhDummyLayer) {
           nhActive = true; showTimelineBar(); nhUpdateMarker(nhCurrentIdx);
         }
+        if (e.layer === nhAllLocsDummyLayer) {
+          if (nhAllLocsGroup) nhAllLocsGroup.addTo(map);
+        }
       });
       map.on('layerremove', e => {
         if (e.layer === karunDummyLayer) {
@@ -1545,6 +1654,9 @@
         }
         if (e.layer === nhDummyLayer) {
           nhActive = false; nhStopPlay(); showTimelineBar(); nhRemoveMarker();
+        }
+        if (e.layer === nhAllLocsDummyLayer) {
+          if (nhAllLocsGroup && map.hasLayer(nhAllLocsGroup)) map.removeLayer(nhAllLocsGroup);
         }
       });
 
