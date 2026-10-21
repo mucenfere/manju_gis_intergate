@@ -445,6 +445,70 @@
     .tl-all-btn:hover { background: #e0e8ff; color: #3a7bef; border-color: #aac4ff; }
     .tl-all-btn.active { background: #dce9ff; color: #3a7bef; border-color: #5b9cf6; font-weight: 800; }
 
+    /* 년도 직접 입력 */
+    .tl-year-input {
+      width: 52px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 2px 5px;
+      text-align: center;
+      outline: none;
+      background: #fafafa;
+    }
+    .tl-year-input:focus { border-color: #5b9cf6; background: #fff; }
+    .tl-year-input.nh { width: 68px; } /* 누르하치용 (YYYY/MM) */
+
+    /* 누르하치 슬라이더 행 구분선 */
+    .tl-divider {
+      border: none;
+      border-top: 1px solid #e8e8e4;
+      margin: 6px 0 4px;
+    }
+
+    /* 누르하치 슬라이더 섹션 헤더 */
+    .tl-nh-header {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 4px;
+    }
+    .tl-nh-label {
+      font-size: 11px; font-weight: 700; color: #8b5e2a;
+      white-space: nowrap;
+    }
+
+    /* 누르하치 슬라이더: 갈색 테마 */
+    .tl-range-nh {
+      width: 100%;
+      -webkit-appearance: none; appearance: none;
+      height: 4px; border-radius: 2px; outline: none; cursor: pointer;
+      background: linear-gradient(to right, #c8860a 0%, #c8860a var(--pct,0%), #d0d0d0 var(--pct,0%), #d0d0d0 100%);
+      position: relative; z-index: 2;
+    }
+    .tl-range-nh::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; border: 2.5px solid #c8860a;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18); cursor: grab;
+    }
+    .tl-range-nh::-webkit-slider-thumb:active { cursor: grabbing; }
+    .tl-range-nh::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; border: 2.5px solid #c8860a; cursor: grab;
+    }
+
+    /* 누르하치 신뢰등급 범례 (시계열 바 안) */
+    .tl-trust-legend {
+      display: flex; align-items: center; gap: 8px;
+      margin-left: auto;
+      font-size: 10px; color: #888;
+    }
+    .tl-trust-legend span { display: flex; align-items: center; gap: 3px; }
+    .tl-trust-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+
     /* 지도 하단 여백 — 슬라이더 바는 float 카드이므로 상단 nav 높이만 */
     #map { height: calc(100% - 44px); }
 
@@ -471,16 +535,40 @@
   </div>
 
   <!-- 시계열 슬라이더 바 -->
-  <div class="timeline-bar" id="timelineBar">
-    <div class="tl-slider-row">
-      <span class="tl-year-label" id="tlYearLabel">1661</span>
-      <div class="tl-track-wrap">
-        <input type="range" class="tl-range" id="tlRange" min="1644" max="1850" value="1661" step="1" />
-        <div class="tl-ticks" id="tlTicks"><!-- JS로 생성 --></div>
+  <div class="timeline-bar" id="timelineBar" style="display:none;">
+    <!-- ── 카룬 시계열 ── -->
+    <div id="tlKarunSection">
+      <div class="tl-slider-row">
+        <input class="tl-year-input" id="tlYearInput" type="text" value="1661" title="년도 직접 입력 후 Enter" />
+        <div class="tl-track-wrap">
+          <input type="range" class="tl-range" id="tlRange" min="1644" max="1850" value="1661" step="1" />
+          <div class="tl-ticks" id="tlTicks"><!-- JS로 생성 --></div>
+        </div>
+        <button class="tl-all-btn" id="tlAllBtn">전체</button>
       </div>
-      <button class="tl-all-btn" id="tlAllBtn">전체</button>
+      <div class="tl-eras" id="tlEras"><!-- JS로 생성 --></div>
     </div>
-    <div class="tl-eras" id="tlEras"><!-- JS로 생성 --></div>
+
+    <!-- ── 누르하치 시계열 ── -->
+    <div id="tlNhSection" style="display:none;">
+      <hr class="tl-divider" />
+      <div class="tl-nh-header">
+        <span class="tl-nh-label">누르하치 이동</span>
+        <input class="tl-year-input nh" id="tlNhInput" type="text" value="1583/01" title="년/월 입력 후 Enter (예: 1619/03)" />
+        <div class="tl-trust-legend">
+          <span><span class="tl-trust-dot" style="background:#6ab04c"></span>확실</span>
+          <span><span class="tl-trust-dot" style="background:#d4a855"></span>유력</span>
+          <span><span class="tl-trust-dot" style="background:#c07030"></span>추정</span>
+          <span><span class="tl-trust-dot" style="background:#a04040"></span>불확실</span>
+        </div>
+      </div>
+      <div class="tl-slider-row">
+        <div class="tl-track-wrap">
+          <input type="range" class="tl-range-nh" id="tlNhRange" min="0" max="0" value="0" step="1" />
+          <div class="tl-ticks" id="tlNhTicks"><!-- JS로 생성 --></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="map"></div>
@@ -851,9 +939,9 @@
     function setSliderYear(year) {
       document.getElementById('tlAllBtn')?.classList.remove('active');
       const slider = document.getElementById('tlRange');
-      const label  = document.getElementById('tlYearLabel');
+      const input  = document.getElementById('tlYearInput');
       if (slider) slider.value = year;
-      if (label)  label.textContent = year;
+      if (input && document.activeElement !== input) input.value = year;
       // 슬라이더 채워진 배경 비율
       const pct = ((year - TL_MIN) / (TL_MAX - TL_MIN)) * 100;
       if (slider) slider.style.setProperty('--pct', pct + '%');
@@ -871,6 +959,21 @@
       tlRange.addEventListener('input', () => setSliderYear(Number(tlRange.value)));
     }
 
+    // 년도 직접 입력
+    const tlYearInput = document.getElementById('tlYearInput');
+    if (tlYearInput) {
+      const commitYearInput = () => {
+        const v = parseInt(tlYearInput.value);
+        if (!isNaN(v) && v >= 1644 && v <= 1850) {
+          setSliderYear(v);
+        } else {
+          tlYearInput.value = document.getElementById('tlRange')?.value || 1661;
+        }
+      };
+      tlYearInput.addEventListener('keydown', e => { if (e.key === 'Enter') { commitYearInput(); tlYearInput.blur(); } });
+      tlYearInput.addEventListener('blur', commitYearInput);
+    }
+
     buildEraChips();
 
     const tlAllBtn = document.getElementById('tlAllBtn');
@@ -881,6 +984,225 @@
         timelineLayers.forEach(({ layer }) => setLayerVisible(layer, true));
         Object.values(wpLayerMap).forEach(l => setLayerVisible(l, true));
       });
+    }
+
+    // ══════════════════════════════════════════════
+    // 누르하치 이동 경로 시계열
+    // ══════════════════════════════════════════════
+    const NH_RECORDS = [
+      { tb:"1583/01", te:"1583/04", mj:"hetu ala",           ch:"赫圖阿拉",  memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                               trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1583/05", te:"1583/05", mj:"turun",               ch:"圖倫城",    memo:"금서춘추: 지금의 倉什伙洛(p.13)/抚顺县上马镇苍什村",                          trust:"B", lng:124.329315, lat:41.886574 },
+      { tb:"1583/06", te:"1583/07", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1583/08", te:"1583/08", mj:"giyaban",             ch:"嘉班城",    memo:"抚顺市东洲区碾盘乡甲邦村",                                                   trust:"A", lng:124.028648, lat:41.887167 },
+      { tb:"1583/09", te:"1583/12", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1584/01", te:"1584/01", mj:"joogiya (lidai)",     ch:"兆嘉城",    memo:"抚顺市新宾县木奇镇赵家村",                                                   trust:"A", lng:124.566107, lat:41.653033 },
+      { tb:"1584/02", te:"1584/05", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1584/06", te:"1584/06", mj:"mardun",              ch:"瑪爾墩寨",  memo:"抚顺市新宾县上夹河镇马尔墩村",                                               trust:"A", lng:124.556253, lat:41.815334 },
+      { tb:"1584/07", te:"1584/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1584/09", te:"1584/09", mj:"cigida",              ch:"齊吉達城",  memo:"《戰績圖》: 와르카시하의 하구 지역",                                          trust:"B", lng:125.325654, lat:41.292714 },
+      { tb:"1584/10", te:"1585/01", mj:"onggolo",             ch:"翁鄂洛城",  memo:"금서춘추: 桓仁 桓路溝, 橫道川 일대로 추정",                                  trust:"B", lng:125.566298, lat:41.239938 },
+      { tb:"1585/02", te:"1585/02", mj:"jaifiyan",            ch:"界藩城",    memo:"辽宁省抚顺市铁背山界藩山上",                                                 trust:"A", lng:124.300611, lat:41.925331 },
+      { tb:"1585/03", te:"1585/03", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1585/04", te:"1585/04", mj:"jaifiyan",            ch:"界藩城",    memo:"辽宁省抚顺市铁背山界藩山上",                                                 trust:"A", lng:124.300611, lat:41.925331 },
+      { tb:"1585/05", te:"1585/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1585/09", te:"1585/09", mj:"antu guwalgiya",      ch:"安圖瓜爾佳城", memo:"《戰績圖》: 자이피얀과 자카 사이, 숙수후강 북쪽 강변",                    trust:"B", lng:124.416424, lat:41.862651 },
+      { tb:"1585/10", te:"1586/04", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1586/05", te:"1586/05", mj:"boihon xanxin",       ch:"貝歡山寨",  memo:"《戰績圖》: 瑪前寨의 동쪽, 八家屯村 남쪽, 청하 남쪽 강변",                   trust:"B", lng:124.990815, lat:42.116152 },
+      { tb:"1586/06", te:"1586/06", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1586/07", te:"1586/07", mj:"tomohoi",             ch:"托摩輝城",  memo:"《戰績圖》: 자이피얀, 鐵背山 동쪽, 토모호이하 북쪽 강변",                    trust:"B", lng:124.343498, lat:41.907176 },
+      { tb:"1586/08", te:"1586/08", mj:"olhon",               ch:"鄂勒琿",    memo:"금서춘추: 范河 강변의 老邊臺 동남쪽, 干溝子로 비정(p.28)",                    trust:"C", lng:124.196553, lat:42.157138 },
+      { tb:"1586/09", te:"1586/12", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1587/01", te:"1587/07", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1587/08", te:"1587/08", mj:"dung",                ch:"洞城",      memo:"금서춘추: Jakdan 강의 상류 동쪽",                                            trust:"D", lng:124.467044, lat:42.039285 },
+      { tb:"1587/09", te:"1588/08", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844234, lat:41.667929 },
+      { tb:"1588/09", te:"1588/09", mj:"wanggiya",            ch:"",          memo:"금서춘추: 동가강과 신개하 합류점 상류 동가강 南岸",                           trust:"B", lng:125.685604, lat:41.34777  },
+      { tb:"1588/10", te:"1589/01", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1589/02", te:"1589/02", mj:"joogiya (ninggucin)", ch:"兆佳",      memo:"금서춘추: 동가강 하류 일대로 추정 (pp.47-49)",                               trust:"D", lng:125.152953, lat:40.934445 },
+      { tb:"1589/03", te:"1593/05", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1593/06", te:"1593/06", mj:"fulgiyaci",           ch:"富爾佳齊",  memo:"금서춘추: 하다성의 남쪽, 하다성과 채하성 중간(p.95)",                        trust:"C", lng:124.435977, lat:42.375329 },
+      { tb:"1593/06", te:"1593/08", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1593/09", te:"1593/09", mj:"jaka",                ch:"扎喀城",    memo:"新宾满族自治县上夹河镇五龙村",                                               trust:"A", lng:124.531478, lat:41.86329  },
+      { tb:"1593/10", te:"1595/05", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1595/06", te:"1595/06", mj:"dobi",                ch:"多璧城",    memo:"금서춘추: 호이파부 서쪽 거점, 호이하파 상류 유역 일대(p.100)",                trust:"C", lng:125.599392, lat:42.479242 },
+      { tb:"1595/07", te:"1599/08", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1599/09", te:"1599/09", mj:"hada",                ch:"哈達",      memo:"",                                                                          trust:"A", lng:124.581192, lat:42.445681 },
+      { tb:"1599/10", te:"1602/12", mj:"fe ala",              ch:"",          memo:"新宾县永陵镇二道村",                                                         trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1603/01", te:"1607/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"抚顺市新宾县永陵镇赫圖阿拉村",                                               trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1607/09", te:"1607/09", mj:"hoifa",               ch:"輝發",      memo:"",                                                                          trust:"A", lng:126.188308, lat:42.735451 },
+      { tb:"1607/10", te:"1612/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1612/09", te:"1612/09", mj:"ula",                 ch:"烏拉",      memo:"",                                                                          trust:"A", lng:126.479233, lat:44.072265 },
+      { tb:"1612/10", te:"1612/12", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.844056, lat:41.667596 },
+      { tb:"1613/01", te:"1613/01", mj:"ula",                 ch:"烏拉",      memo:"",                                                                          trust:"A", lng:126.479233, lat:44.072265 },
+      { tb:"1613/02", te:"1613/08", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1613/09", te:"1613/09", mj:"jang",                ch:"",          memo:"금서춘추: 여허성의 동북쪽 伊通 주변부로 비정(p.112)",                         trust:"C", lng:125.230875, lat:43.521089 },
+      { tb:"1613/10", te:"1618/03", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1618/04", te:"1618/05", mj:"撫順",                ch:"撫順",      memo:"",                                                                          trust:"A", lng:123.904248, lat:41.883858 },
+      { tb:"1618/06", te:"1618/06", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1618/07", te:"1618/07", mj:"清河",                ch:"清河",      memo:"",                                                                          trust:"A", lng:124.226344, lat:41.455132 },
+      { tb:"1618/08", te:"1618/12", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1619/01", te:"1619/01", mj:"yehe",                ch:"葉赫",      memo:"",                                                                          trust:"A", lng:124.525907, lat:42.936223 },
+      { tb:"1619/02", te:"1619/02", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1619/03", te:"1619/03", mj:"sarhv",               ch:"薩爾滸",    memo:"",                                                                          trust:"A", lng:124.24573,  lat:41.89632  },
+      { tb:"1619/04", te:"1619/05", mj:"hetu ala",            ch:"赫圖阿拉",  memo:"",                                                                          trust:"A", lng:124.860552, lat:41.705364 },
+      { tb:"1619/06", te:"1619/06", mj:"開原",                ch:"開原",      memo:"",                                                                          trust:"A", lng:124.080798, lat:42.596315 },
+      { tb:"1619/07", te:"1619/07", mj:"鐵嶺",                ch:"鐵嶺",      memo:"",                                                                          trust:"A", lng:123.852866, lat:42.2955   },
+      { tb:"1619/08", te:"1619/08", mj:"yehe",                ch:"葉赫",      memo:"",                                                                          trust:"A", lng:124.525907, lat:42.936223 },
+      { tb:"1619/09", te:"1620/07", mj:"jaifiyan",            ch:"界藩城",    memo:"辽宁省抚顺市铁背山界藩山上",                                                 trust:"A", lng:124.300611, lat:41.925331 },
+      { tb:"1620/08", te:"1620/08", mj:"懿路",                ch:"懿路",      memo:"铁岭市铁岭县新台子镇懿路村",                                                 trust:"A", lng:123.649006, lat:42.098762 },
+      { tb:"1620/09", te:"1620/09", mj:"jaifiyan",            ch:"界藩城",    memo:"",                                                                          trust:"A", lng:124.300611, lat:41.925331 },
+      { tb:"1620/10", te:"1621/01", mj:"sarhv",               ch:"薩爾滸",    memo:"",                                                                          trust:"A", lng:124.24573,  lat:41.89632  },
+      { tb:"1621/02", te:"1621/02", mj:"奉集堡",              ch:"奉集堡",    memo:"沈阳市苏家屯区陈相屯街道奉集堡村",                                           trust:"A", lng:123.562122, lat:41.570441 },
+      { tb:"1621/03", te:"1621/03", mj:"瀋陽",                ch:"瀋陽",      memo:"",                                                                          trust:"A", lng:123.449491, lat:41.796076 },
+      { tb:"1621/04", te:"1621/12", mj:"遼陽",                ch:"遼陽",      memo:"",                                                                          trust:"A", lng:123.184847, lat:41.268281 },
+      { tb:"1622/01", te:"1622/01", mj:"廣寧",                ch:"廣寧",      memo:"",                                                                          trust:"A", lng:121.790165, lat:41.592868 },
+      { tb:"1622/02", te:"1622/02", mj:"塔山",                ch:"塔山",      memo:"",                                                                          trust:"A", lng:120.934744, lat:40.843561 },
+      { tb:"1622/03", te:"1622/03", mj:"遼陽",                ch:"遼陽",      memo:"",                                                                          trust:"A", lng:123.185035, lat:41.268122 },
+      { tb:"1622/04", te:"1625/02", mj:"東京",                ch:"東京城",    memo:"",                                                                          trust:"A", lng:123.234539, lat:41.275824 },
+      { tb:"1625/03", te:"1625/12", mj:"瀋陽",                ch:"瀋陽",      memo:"",                                                                          trust:"A", lng:123.449491, lat:41.796076 },
+      { tb:"1626/01", te:"1626/01", mj:"永遠",                ch:"永遠城",    memo:"",                                                                          trust:"A", lng:120.706549, lat:40.620814 },
+      { tb:"1626/02", te:"1626/03", mj:"瀋陽",                ch:"瀋陽",      memo:"",                                                                          trust:"A", lng:123.449491, lat:41.796076 },
+      { tb:"1626/04", te:"1626/04", mj:"kalka",               ch:"喀爾喀",    memo:"후훈하의 서북쪽 일대에서 칼카를 정벌했던 것으로 추정됨",                     trust:"B", lng:120.990483, lat:42.684107 },
+      { tb:"1626/05", te:"1626/06", mj:"瀋陽",                ch:"瀋陽",      memo:"",                                                                          trust:"A", lng:123.449491, lat:41.796076 },
+      { tb:"1626/07", te:"1626/07", mj:"清河",                ch:"清河",      memo:"",                                                                          trust:"A", lng:124.226344, lat:41.455132 },
+      { tb:"1626/08", te:"1626/08", mj:"ai gi bu",            ch:"靉雞堡",    memo:"沈阳市铁西区大青中朝友谊街道大挨金堡村",                                     trust:"A", lng:123.205006, lat:41.684234 },
+    ];
+
+    // 누르하치 년/월 → 인덱스
+    const NH_IDX_MIN = 0;
+    function nhYmToIdx(ym) {
+      const [y, m] = ym.split('/').map(Number);
+      return (y - 1583) * 12 + (m - 1);
+    }
+    function nhIdxToYm(idx) {
+      const y = 1583 + Math.floor(idx / 12);
+      const m = (idx % 12) + 1;
+      return `${y}/${String(m).padStart(2,'0')}`;
+    }
+    NH_RECORDS.forEach(r => { r.idxB = nhYmToIdx(r.tb); r.idxE = nhYmToIdx(r.te); });
+    const NH_IDX_MAX = Math.max(...NH_RECORDS.map(r => r.idxE));
+
+    function nhGetRecord(idx) {
+      let found = null;
+      for (const r of NH_RECORDS) {
+        if (r.idxB <= idx && idx <= r.idxE) {
+          if (!found || ({A:0,B:1,C:2,D:3}[r.trust]??4) < ({A:0,B:1,C:2,D:3}[found.trust]??4)) found = r;
+        }
+      }
+      return found;
+    }
+
+    // 누르하치 초상 아이콘
+    const NH_PORTRAIT = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Nurhaci.jpg/120px-Nurhaci.jpg';
+    function makeNhIcon(trust) {
+      const bc = {A:'#6ab04c',B:'#d4a855',C:'#c07030',D:'#a04040'}[trust]||'#c8a040';
+      const s = 44, tip = 12;
+      return L.divIcon({
+        html: `<div style="position:relative;width:${s}px;height:${s+tip}px;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.6))">
+          <div style="position:absolute;bottom:${tip}px;left:0;width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;border:3px solid ${bc};background:#2a1a0a;">
+            <img src="${NH_PORTRAIT}" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.display='none'"/>
+          </div>
+          <svg style="position:absolute;bottom:0;left:0" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${tip+2}">
+            <polygon points="0,0 ${s*0.22},${tip} ${s*0.08},0" fill="${bc}"/>
+          </svg>
+        </div>`,
+        className: '',
+        iconSize: [s, s+tip],
+        iconAnchor: [7, s+tip],
+        popupAnchor: [s/2-7, -(s+tip)],
+      });
+    }
+
+    let nhMarker = null;
+    let nhCurrentIdx = NH_IDX_MIN;
+    let nhActive = false;   // 누르하치 기능 온/오프
+
+    function nhUpdateMarker(idx) {
+      if (!nhActive) return;
+      const rec = nhGetRecord(idx);
+      if (!rec) return;
+      const latlng = [rec.lat, rec.lng];
+      const icon = makeNhIcon(rec.trust);
+      const popup = `<div style="font-family:sans-serif;min-width:160px">
+        <div style="font-weight:700;font-size:13px">${rec.mj}</div>
+        ${rec.ch ? `<div style="font-size:11px;color:#888;margin-top:2px">${rec.ch}</div>` : ''}
+        <div style="font-size:11px;color:#aaa;margin-top:3px">${rec.tb} ~ ${rec.te}</div>
+        ${rec.memo ? `<div style="font-size:11px;margin-top:5px;border-top:1px solid #eee;padding-top:4px">${rec.memo}</div>` : ''}
+      </div>`;
+      if (!nhMarker) {
+        nhMarker = L.marker(latlng, { icon, zIndexOffset: 2000 }).addTo(map).bindPopup(popup);
+      } else {
+        nhMarker.setLatLng(latlng).setIcon(icon).setPopupContent(popup);
+        if (!map.hasLayer(nhMarker)) nhMarker.addTo(map);
+      }
+      // 입력창 동기화
+      const inp = document.getElementById('tlNhInput');
+      if (inp && document.activeElement !== inp) inp.value = nhIdxToYm(idx);
+    }
+
+    function nhRemoveMarker() {
+      if (nhMarker && map.hasLayer(nhMarker)) map.removeLayer(nhMarker);
+    }
+
+    // 누르하치 슬라이더 구성
+    function nhBuildSlider() {
+      const sl = document.getElementById('tlNhRange');
+      if (!sl) return;
+      sl.min = 0; sl.max = NH_IDX_MAX; sl.value = nhCurrentIdx;
+      // 눈금: 10년마다
+      const tc = document.getElementById('tlNhTicks');
+      if (!tc) return;
+      tc.innerHTML = '';
+      tc.style.height = '8px'; tc.style.marginTop = '3px';
+      tc.style.position = 'relative'; tc.style.padding = '0 9px'; tc.style.boxSizing = 'border-box';
+      for (let y = 1583; y <= 1626; y++) {
+        if (y % 5 !== 0 && y !== 1583 && y !== 1626) continue;
+        const pct = (nhYmToIdx(`${y}/01`) / NH_IDX_MAX) * 100;
+        const d = document.createElement('div');
+        d.style.cssText = `position:absolute;left:${pct}%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;`;
+        d.innerHTML = `<div style="width:1px;height:6px;background:${y%10===0||y===1583||y===1626?'#c8860a':'#ccc'}"></div>`
+          + (y%10===0||y===1583||y===1626 ? `<div style="font-size:9px;color:#b07020;margin-top:1px;white-space:nowrap">${y}</div>` : '');
+        tc.appendChild(d);
+      }
+      sl.addEventListener('input', () => {
+        nhCurrentIdx = parseInt(sl.value);
+        const pct = (nhCurrentIdx / NH_IDX_MAX) * 100;
+        sl.style.setProperty('--pct', pct + '%');
+        nhUpdateMarker(nhCurrentIdx);
+      });
+    }
+
+    // 누르하치 년/월 직접 입력
+    const tlNhInput = document.getElementById('tlNhInput');
+    if (tlNhInput) {
+      const commitNhInput = () => {
+        const v = tlNhInput.value.trim();
+        const match = v.match(/^(\d{4})[\/\-\.]?(\d{1,2})$/);
+        if (match) {
+          const y = parseInt(match[1]), m = parseInt(match[2]);
+          if (y >= 1583 && y <= 1626 && m >= 1 && m <= 12) {
+            nhCurrentIdx = nhYmToIdx(`${y}/${String(m).padStart(2,'0')}`);
+            nhCurrentIdx = Math.min(nhCurrentIdx, NH_IDX_MAX);
+            const sl = document.getElementById('tlNhRange');
+            if (sl) { sl.value = nhCurrentIdx; sl.style.setProperty('--pct', (nhCurrentIdx/NH_IDX_MAX*100)+'%'); }
+            nhUpdateMarker(nhCurrentIdx);
+          }
+        }
+        tlNhInput.value = nhIdxToYm(nhCurrentIdx);
+      };
+      tlNhInput.addEventListener('keydown', e => { if (e.key === 'Enter') { commitNhInput(); tlNhInput.blur(); } });
+      tlNhInput.addEventListener('blur', commitNhInput);
+    }
+
+    // 카룬 시계열 온/오프 (체크박스로 제어)
+    let karunTlActive = false;
+
+    function showTimelineBar() {
+      const bar = document.getElementById('timelineBar');
+      if (!bar) return;
+      if (karunTlActive || nhActive) bar.style.display = '';
+      else bar.style.display = 'none';
+      document.getElementById('tlKarunSection').style.display = karunTlActive ? '' : 'none';
+      document.getElementById('tlNhSection').style.display = nhActive ? '' : 'none';
     }
 
     (async () => {
@@ -1039,6 +1361,9 @@
       const wp_gate_ql_pts = await loadGeoJSON('./data/willowpalisade_gate_ql.geojson',   mkIconPt(icon_wp_gate, { label: true }));
       const wpqianlong_bundle = L.layerGroup([wpqianlong, wp_gate_ql_pts]);
 
+      // 누르하치 더미 레이어 (체크박스 생성용, 실제 표시는 nhMarker로 별도 관리)
+      const nhDummyLayer = L.layerGroup();
+
       const groupedOverlays = {
         "기본지리정보": {
           [`${lineSvg('#000')}성경장군 관할 경계선`]:  admin_v1,
@@ -1054,6 +1379,10 @@
           [`${lineSvg('#999')}府 경계선`]: chgispref_pgn,
           [`${dotSvg('#000')}府 치소`]:    chgispref_pts,
           [`${dotSvg('#000')}인문지명`]:   chgistwn_pts
+        },
+        "시계열": {
+          [`⏱ 카룬 시계열 (1644–1850)`]: L.layerGroup(),
+          [`👤 누르하치의 위치 (1583–1626)`]: nhDummyLayer
         }
       };
 
@@ -1120,6 +1449,30 @@
 
       // ── 초기 연도: 강희 원년(1661) ──
       setSliderYear(1661);
+
+      // ── 누르하치 슬라이더 초기화 ──
+      nhBuildSlider();
+
+      // ── 시계열 더미 레이어 이벤트로 체크박스 감지 ──
+      // groupedLayers 컨트롤이 체크박스 체크 시 map에 layer를 add/remove함
+      const karunDummyLayer = groupedOverlays['시계열'][`⏱ 카룬 시계열 (1644–1850)`];
+
+      map.on('layeradd', e => {
+        if (e.layer === karunDummyLayer) {
+          karunTlActive = true; showTimelineBar();
+        }
+        if (e.layer === nhDummyLayer) {
+          nhActive = true; showTimelineBar(); nhUpdateMarker(nhCurrentIdx);
+        }
+      });
+      map.on('layerremove', e => {
+        if (e.layer === karunDummyLayer) {
+          karunTlActive = false; showTimelineBar();
+        }
+        if (e.layer === nhDummyLayer) {
+          nhActive = false; showTimelineBar(); nhRemoveMarker();
+        }
+      });
 
       // ── 고정 라벨 ──
       L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-sm', opacity: 0.5 })
