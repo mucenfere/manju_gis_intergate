@@ -1481,9 +1481,9 @@
       const wpqianlong_bundle = L.layerGroup([wpqianlong, wp_gate_ql_pts]);
 
       // 장성 & 요동변장
-      const greatwallLayer   = await loadGeoJSON('./data/greatwall_line.geojson',   { style: { color: '#8B4513', weight: 2, opacity: 0.85 } });
+      const greatwallLayer   = await loadGeoJSON('./data/greatwall_line.geojson',   { style: { color: '#d8d0c0', weight: 3.5, opacity: 0.9 } });
       greatwallLayer.addTo(map);
-      const liaodongWallLayer = await loadGeoJSON('./data/liaodong_wall.geojson',   { style: { color: '#a04000', weight: 2, opacity: 0.85, dashArray: '6,4' } });
+      const liaodongWallLayer = await loadGeoJSON('./data/liaodong_wall.geojson',   { style: { color: '#d8d0c0', weight: 3.5, opacity: 0.9 } });
       // 요동변장은 초기 off
 
       // 누르하치 더미 레이어 (체크박스 생성용, 실제 표시는 nhMarker로 별도 관리)
@@ -1494,12 +1494,12 @@
       const groupedOverlays = {
         "기본지리정보": {
           [`${lineSvg('#000')}성경장군 관할 경계선`]:  admin_v1,
-          [`${lineSvg('#8B4513')}장성`]:               greatwallLayer,
+          [`${lineSvg('#d8d0c0')}장성`]:               greatwallLayer,
           [`${dotSvg('#004eff')}행정 지명(lv1/lv2)`]: admin_pts,
           [`${dotSvg('#888')}역참`]:                   giyamun_pt
         },
         "요동변장&유조변": {
-          [`${lineSvg('#a04000')}요동변장`]:            liaodongWallLayer,
+          [`${lineSvg('#d8d0c0')}요동변장`]:            liaodongWallLayer,
           [`${lineSvg('#d60000')}유조변(강희-옹정)`]:  wpkangxi_bundle,
           [`${lineSvg('#d60000')}유조변(건륭이후)`]:   wpqianlong_bundle
         },
@@ -1654,6 +1654,27 @@
       // groupedLayers 컨트롤이 체크박스 체크 시 map에 layer를 add/remove함
       const karunDummyLayer = groupedOverlays['시계열'][`카룬 시계열 (1644–1850)`];
 
+      // 누르하치 ON 시: 유조변 OFF + 요동변장 ON; OFF 시 반대로 복원
+      function nhSetWallMode(nhOn) {
+        // 체크박스 UI 동기화 헬퍼: leaflet-groupedlayercontrol 체크박스는
+        // input[type=checkbox]에 레이어 객체가 _leaflet_id로 연결되어 있음
+        function syncCheckbox(layer, visible) {
+          if (visible) { if (!map.hasLayer(layer)) map.addLayer(layer); }
+          else         { if (map.hasLayer(layer))  map.removeLayer(layer); }
+        }
+        if (nhOn) {
+          // 유조변 두 레이어 끄기
+          syncCheckbox(wpkangxi_bundle,   false);
+          syncCheckbox(wpqianlong_bundle, false);
+          // 요동변장 켜기
+          syncCheckbox(liaodongWallLayer, true);
+        } else {
+          // 요동변장 끄기 (원래 초기상태가 off였으므로)
+          syncCheckbox(liaodongWallLayer, false);
+          // 유조변은 applyYear가 관리하므로 별도 복원 불필요
+        }
+      }
+
       map.on('layeradd', e => {
         if (e.layer === karunDummyLayer) {
           karunTlActive = true; showTimelineBar();
@@ -1662,9 +1683,11 @@
         }
         if (e.layer === nhDummyLayer) {
           nhActive = true; showTimelineBar(); nhUpdateMarker(nhCurrentIdx);
+          nhSetWallMode(true);
         }
         if (e.layer === nhAllLocsDummyLayer) {
           if (nhAllLocsGroup) nhAllLocsGroup.addTo(map);
+          nhSetWallMode(true);
         }
       });
       map.on('layerremove', e => {
@@ -1673,9 +1696,13 @@
         }
         if (e.layer === nhDummyLayer) {
           nhActive = false; nhStopPlay(); showTimelineBar(); nhRemoveMarker();
+          // 다른 누르하치 레이어도 꺼져 있을 때만 벽 복원
+          if (!map.hasLayer(nhAllLocsDummyLayer)) nhSetWallMode(false);
         }
         if (e.layer === nhAllLocsDummyLayer) {
           if (nhAllLocsGroup && map.hasLayer(nhAllLocsGroup)) map.removeLayer(nhAllLocsGroup);
+          // 다른 누르하치 레이어도 꺼져 있을 때만 벽 복원
+          if (!map.hasLayer(nhDummyLayer)) nhSetWallMode(false);
         }
       });
 
