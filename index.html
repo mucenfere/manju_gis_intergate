@@ -1114,12 +1114,12 @@
 
     // 누르하치 초상 아이콘 — 말풍선(speech bubble) 모양: 원형 초상 + 중앙 하단 삼각 꼭지
     const NH_PORTRAIT = 'images/nurhaci.png';
-    function makeNhIcon(trust) {
+    function makeNhIcon(trust, scale = 1) {
       const bc = {A:'#6ab04c',B:'#d4a855',C:'#c07030',D:'#a04040'}[trust]||'#c8a040';
-      const s = 48;   // 원 지름(px)
-      const b = 3;    // 테두리 두께
-      const tip = 14; // 꼭지 높이
-      const tw = 12;  // 꼭지 밑변 너비
+      const s = Math.round(48 * scale);  // 원 지름(px)
+      const b = Math.max(1, Math.round(3 * scale));  // 테두리 두께
+      const tip = Math.round(14 * scale); // 꼭지 높이
+      const tw = Math.round(12 * scale);  // 꼭지 밑변 너비
       // 꼭지: 원의 수평 중앙 정렬, SVG 좌표계에서 x=s/2
       const tx = s / 2;
       return L.divIcon({
@@ -1602,8 +1602,8 @@
         byCoord.forEach(({ rec, bestTrust, periods }) => {
           const latlng = [rec.lat, rec.lng];
 
-          // ── 말풍선 아이콘 (makeNhIcon 재사용) ──
-          const bubbleIcon = makeNhIcon(bestTrust);
+          // ── 말풍선 아이콘 — 절반 크기(scale=0.5) ──
+          const bubbleIcon = makeNhIcon(bestTrust, 0.5);
 
           // ── 검정 점 아이콘 ──
           const dotIcon = L.divIcon({
