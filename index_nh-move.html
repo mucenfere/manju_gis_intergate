@@ -1141,9 +1141,10 @@
       });
     }
 
-    let nhMarker = null;
-    let nhDotMarker = null;   // 지점 검정 점
-    let nhLabelMarker = null; // 만주어 지명 라벨
+    let nhMarker = null;          // 움직이는 누르하치 초상
+    let nhVisitedGroup = null;    // 지나온 지점들의 점 + 지명 라벨 (고정)
+    let nhVisitedKeys = new Set();
+    let nhVisitedUpTo = -1;
     let nhCurrentIdx = NH_IDX_MIN;
     let nhActive = false;   // 누르하치 기능 온/오프
     /* ──────────────────────────────────────────────────────────────────
@@ -1155,7 +1156,7 @@
     const NH_MOVE_MS   = 900;    // 지점이 바뀌는 달: 이동에 할애하는 시간(ms)
     const NH_ARRIVE_MS = 280;    // 도착 후 숨 고르기(ms) — 있어야 도착점이 눈에 들어온다
     const NH_TRAIL       = true;  // 지나온 경로를 점선으로 표시
-    const NH_TRAIL_TAIL  = 0;     // 0이면 전체 경로, N이면 최근 N개 지점만 (화면이 복잡하면 8~12 권장)
+    const NH_TRAIL_TAIL  = 0;     // 0이면 전체 경로, N이면 최근 N개 구간만 (화면이 복잡하면 8~12 권장)
     const NH_FOLLOW_VIEW = false; // true면 지도 시점이 누르하치를 따라간다
     // 이동 시간을 거리에 비례시키려면 아래를 true로. (먼 거리는 오래, 가까운 거리는 짧게)
     const NH_MOVE_BY_DISTANCE = false;
@@ -1172,7 +1173,8 @@
     let nhElapsed = 0;
     let nhLastTs  = null;
     let nhFrom = null, nhTo = null, nhDur = 0;
-    let nhTrailLine = null;
+    let nhTrailLine = null;   // 확정된 경로(중복 구간 제거)
+    let nhTrailTip  = null;   // 지금 이동 중인 구간
 
     function nhRecLatLng(idx) {
       const r = nhGetRecord(idx);
@@ -1186,21 +1188,47 @@
       return map.unproject(pa.add(pb.subtract(pa).multiplyBy(t)), NH_PROJ_ZOOM);
     }
 
-    /** 아이콘을 다시 만들지 않고 위치만 옮긴다 (매 프레임 호출되므로 가벼워야 함) */
+    /** 아이콘을 다시 만들지 않고 초상 위치만 옮긴다 (매 프레임 호출되므로 가벼워야 함) */
     function nhSetPos(latlng) {
-      if (nhMarker)      nhMarker.setLatLng(latlng);
-      if (nhDotMarker)   nhDotMarker.setLatLng(latlng);
-      if (nhLabelMarker) nhLabelMarker.setLatLng(latlng);
+      if (nhMarker) nhMarker.setLatLng(latlng);
       if (NH_FOLLOW_VIEW) map.setView(latlng, map.getZoom(), { animate: false });
     }
 
-    /** 이동 중에는 점과 지명 라벨을 숨긴다 — 옛 지명이 따라다니면 어색하므로 */
-    function nhSetTransit(on) {
-      if (nhDotMarker)   nhDotMarker.setOpacity(on ? 0 : 1);
-      if (nhLabelMarker) nhLabelMarker.setOpacity(on ? 0 : 1);
+    /* ── 지나온 지점의 점·지명 라벨 (한 번 지나간 곳은 계속 남는다) ── */
+    function nhPosKey(lat, lng) { return lat.toFixed(6) + ',' + lng.toFixed(6); }
+
+    function nhEnsureVisited() {
+      if (!nhVisitedGroup) nhVisitedGroup = L.layerGroup().addTo(map);
+      else if (!map.hasLayer(nhVisitedGroup)) nhVisitedGroup.addTo(map);
+      return nhVisitedGroup;
     }
 
-    /** 해당 월까지 지나온 지점들(연속 중복 제거) */
+    function nhAddVisited(r) {
+      const key = nhPosKey(r.lat, r.lng);
+      if (nhVisitedKeys.has(key)) return;      // 같은 지점을 다시 지나면 중복 표기하지 않는다
+      nhVisitedKeys.add(key);
+      const g = nhEnsureVisited();
+      L.marker([r.lat, r.lng], { icon: nhDotIcon, zIndexOffset: 1900, interactive: false }).addTo(g);
+      L.marker([r.lat, r.lng], { icon: nhMakeLabelIcon(r.mj, r.ch), zIndexOffset: 1800, interactive: false }).addTo(g);
+    }
+
+    /** 해당 월까지 지나온 지점을 모두 표시. 뒤로 돌아간 경우에만 다시 그린다. */
+    function nhSyncVisited(idx) {
+      if (!nhActive) return;
+      if (idx < nhVisitedUpTo) {
+        if (nhVisitedGroup) nhVisitedGroup.clearLayers();
+        nhVisitedKeys.clear();
+        nhVisitedUpTo = -1;
+      }
+      for (const r of NH_RECORDS) {
+        if (r.idxB <= idx && r.idxB > nhVisitedUpTo) nhAddVisited(r);
+      }
+      nhVisitedUpTo = idx;
+    }
+
+    /* ── 경로 점선 ──────────────────────────────────────────────
+       같은 구간을 두 번 지날 때 선이 겹쳐 실선처럼 보이는 것을 막기 위해,
+       하나의 연속선이 아니라 '중복을 제거한 구간들'의 묶음으로 그린다. */
     function nhTrailPointsUpTo(idx) {
       const pts = [];
       for (const r of NH_RECORDS) {
@@ -1211,20 +1239,42 @@
       return pts;
     }
 
-    function nhUpdateTrail(idx, tipLatLng) {
+    /** 방향을 무시한 구간 식별자 — A→B와 B→A를 같은 구간으로 본다 */
+    function nhSegKey(a, b) {
+      const k1 = nhPosKey(a.lat, a.lng), k2 = nhPosKey(b.lat, b.lng);
+      return k1 < k2 ? k1 + '|' + k2 : k2 + '|' + k1;
+    }
+
+    function nhEnsureTrail() {
+      const style = { color: '#c8860a', weight: 2.5, opacity: 0.85,
+                      dashArray: '6 5', interactive: false };
+      if (!nhTrailLine) nhTrailLine = L.polyline([], style).addTo(map);
+      else if (!map.hasLayer(nhTrailLine)) nhTrailLine.addTo(map);
+      if (!nhTrailTip) nhTrailTip = L.polyline([], style).addTo(map);
+      else if (!map.hasLayer(nhTrailTip)) nhTrailTip.addTo(map);
+    }
+
+    function nhUpdateTrail(idx) {
       if (!NH_TRAIL || !nhActive) return;
-      if (!nhTrailLine) {
-        nhTrailLine = L.polyline([], {
-          color: '#c8860a', weight: 2.5, opacity: 0.85,
-          dashArray: '6 5', interactive: false
-        }).addTo(map);
-      } else if (!map.hasLayer(nhTrailLine)) {
-        nhTrailLine.addTo(map);
+      nhEnsureTrail();
+      const pts = nhTrailPointsUpTo(idx);
+      const seen = new Set();
+      let segs = [];
+      for (let i = 1; i < pts.length; i++) {
+        const k = nhSegKey(pts[i - 1], pts[i]);
+        if (seen.has(k)) continue;             // 이미 그린 구간은 건너뛴다
+        seen.add(k);
+        segs.push([pts[i - 1], pts[i]]);
       }
-      let pts = nhTrailPointsUpTo(idx);
-      if (NH_TRAIL_TAIL > 0) pts = pts.slice(-NH_TRAIL_TAIL);
-      if (tipLatLng) pts.push(tipLatLng);
-      nhTrailLine.setLatLngs(pts);
+      if (NH_TRAIL_TAIL > 0) segs = segs.slice(-NH_TRAIL_TAIL);
+      nhTrailLine.setLatLngs(segs);
+    }
+
+    /** 이동 중인 구간만 따로 그린다 (도착하면 지우고 본 경로에 합류) */
+    function nhSetTrailTip(from, to) {
+      if (!NH_TRAIL || !nhActive) return;
+      nhEnsureTrail();
+      nhTrailTip.setLatLngs(from && to ? [from, to] : []);
     }
 
     function nhSyncSlider() {
@@ -1241,7 +1291,7 @@
       nhLastTs  = null;
       nhPhase   = 'step';
       if (nhRaf) { cancelAnimationFrame(nhRaf); nhRaf = null; }
-      nhSetTransit(false);
+      nhSetTrailTip(null);
       // 이동 도중 멈췄다면 해당 월의 실제 지점으로 되돌린다
       if (wasMoving) nhUpdateMarker(nhCurrentIdx);
       const btn = document.getElementById('tlNhPlayBtn');
@@ -1262,7 +1312,6 @@
         } else {
           nhDur = NH_MOVE_MS;
         }
-        nhSetTransit(true);
       } else {
         nhPhase = 'step';
         nhDur   = NH_MONTH_MS;
@@ -1273,7 +1322,7 @@
     function nhAdvance() {
       nhCurrentIdx++;
       nhSyncSlider();
-      nhSetTransit(false);
+      nhSetTrailTip(null);
       nhUpdateMarker(nhCurrentIdx);
       if (nhCurrentIdx >= NH_IDX_MAX) { nhStopPlay(); return false; }
       return true;
@@ -1290,7 +1339,7 @@
         const t = Math.min(nhElapsed / nhDur, 1);
         const pos = nhLerp(nhFrom, nhTo, nhEase(t));
         nhSetPos(pos);
-        nhUpdateTrail(nhCurrentIdx, pos);
+        nhSetTrailTip(nhFrom, pos);
         if (t >= 1) {
           if (!nhAdvance()) return;
           nhPhase = 'hold';
@@ -1366,22 +1415,8 @@
         if (!map.hasLayer(nhMarker)) nhMarker.addTo(map);
       }
 
-      // 검정 점
-      if (!nhDotMarker) {
-        nhDotMarker = L.marker(latlng, { icon: nhDotIcon, zIndexOffset: 1900, interactive: false }).addTo(map);
-      } else {
-        nhDotMarker.setLatLng(latlng);
-        if (!map.hasLayer(nhDotMarker)) nhDotMarker.addTo(map);
-      }
-
-      // 만주어/한자 지명 라벨
-      const labelIcon = nhMakeLabelIcon(rec.mj, rec.ch);
-      if (!nhLabelMarker) {
-        nhLabelMarker = L.marker(latlng, { icon: labelIcon, zIndexOffset: 1800, interactive: false }).addTo(map);
-      } else {
-        nhLabelMarker.setLatLng(latlng).setIcon(labelIcon);
-        if (!map.hasLayer(nhLabelMarker)) nhLabelMarker.addTo(map);
-      }
+      // 지나온 지점의 점·지명 라벨 (한 번 지나간 곳은 계속 남는다)
+      nhSyncVisited(idx);
 
       // 지나온 경로
       nhUpdateTrail(idx);
@@ -1393,9 +1428,13 @@
 
     function nhRemoveMarker() {
       if (nhMarker && map.hasLayer(nhMarker)) map.removeLayer(nhMarker);
-      if (nhDotMarker && map.hasLayer(nhDotMarker)) map.removeLayer(nhDotMarker);
-      if (nhLabelMarker && map.hasLayer(nhLabelMarker)) map.removeLayer(nhLabelMarker);
       if (nhTrailLine && map.hasLayer(nhTrailLine)) map.removeLayer(nhTrailLine);
+      if (nhTrailTip && map.hasLayer(nhTrailTip)) map.removeLayer(nhTrailTip);
+      if (nhVisitedGroup && map.hasLayer(nhVisitedGroup)) map.removeLayer(nhVisitedGroup);
+      // 다시 켤 때 처음부터 쌓이도록 초기화
+      if (nhVisitedGroup) nhVisitedGroup.clearLayers();
+      nhVisitedKeys.clear();
+      nhVisitedUpTo = -1;
     }
 
     // 누르하치 슬라이더 구성
