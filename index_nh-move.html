@@ -79,6 +79,16 @@
 
     .labels-hidden .leaflet-tooltip.plain-label { display: none !important; }
 
+    /* 누르하치 경유지 지명 라벨 토글 */
+    .nh-labels-hidden .nh-label { display: none !important; }
+    .tl-nh-lbl-btn{
+      border: 1px solid #c8860a; background: #fff; color: #b07020;
+      border-radius: 4px; font-size: 11px; padding: 2px 7px; cursor: pointer;
+      white-space: nowrap; line-height: 1.4;
+    }
+    .tl-nh-lbl-btn:hover{ background: #fdf3e0; }
+    .tl-nh-lbl-btn.off{ color: #999; border-color: #ccc; }
+
     .leaflet-control-layers{
       max-height: calc(100vh - 60px - 54px);
       overflow: hidden;
@@ -573,6 +583,7 @@
       <div class="tl-nh-header">
         <span class="tl-nh-label">누르하치 이동</span>
         <input class="tl-year-input nh" id="tlNhInput" type="text" value="1583/01" title="년/월 입력 후 Enter (예: 1619/03)" />
+        <button class="tl-nh-lbl-btn" id="tlNhLabelBtn" type="button" title="경유지 지명 라벨 표시/숨김">지명 ON</button>
         <div class="tl-trust-legend">
           <span><span class="tl-trust-dot" style="background:#6ab04c"></span>확실</span>
           <span><span class="tl-trust-dot" style="background:#d4a855"></span>유력</span>
@@ -896,13 +907,8 @@
         // 카룬 시계열이 OFF면 모든 카룬 레이어 숨김
         setLayerVisible(layer, karunTlActive && activeTimes.includes(time));
       });
-      // 유조변: 현재 연호의 wpKey (카룬 시계열과 무관하게 항상 동작)
-      const era = yearToEra(year);
-      const eraDef = ERA_DEFS.find(e => e.name === era);
-      const activeWp = eraDef?.wpKey || null;
-      Object.entries(wpLayerMap).forEach(([key, layer]) => {
-        setLayerVisible(layer, key === activeWp);
-      });
+      // 유조변 레이어는 이 화면에서 쓰지 않으므로 항상 숨긴다
+      Object.values(wpLayerMap).forEach(layer => setLayerVisible(layer, false));
     }
 
     // ── UI: 눈금 + 연호 칩 생성 ──
@@ -1388,7 +1394,7 @@
           <div style="font-size:11px;font-weight:600;color:#111;white-space:nowrap;text-shadow:${shadow}">${mj}</div>
           ${line2}
         </div>`,
-        className: '',
+        className: 'nh-label',
         iconSize: null,
         iconAnchor: [0, -4],
       });
@@ -1647,7 +1653,6 @@
       const admin_v1 = await loadGeoJSON('./data/admin_lv1_line.geojson', {
         style: { color: '#000000', weight: 4, opacity: 0.8 }
       });
-      admin_v1.addTo(map);
 
       const admin_pts = await loadGeoJSON('./data/manchu_admin_pt.geojson', {
         label: true,
@@ -1657,17 +1662,14 @@
           return marker;
         }
       });
-      admin_pts.addTo(map);
 
       const giyamun_pt = await loadGeoJSON('./data/manchu_giyamun_pt.geojson',
         mkIconPt(icon_giyamun, { label: true })
       );
-      giyamun_pt.addTo(map);
 
       const wpkangxi       = await loadGeoJSON('./data/willowpalisade-kangxi.geojson',    { style: willowpalisade });
       const wp_gate_kx_pts = await loadGeoJSON('./data/willowpalisade_gate_kxyz.geojson', mkIconPt(icon_wp_gate, { label: true }));
       const wpkangxi_bundle = L.layerGroup([wpkangxi, wp_gate_kx_pts]);
-      wpkangxi_bundle.addTo(map);
 
       const wpqianlong     = await loadGeoJSON('./data/willowpalisade-qianlong.geojson',  { style: willowpalisade });
       const wp_gate_ql_pts = await loadGeoJSON('./data/willowpalisade_gate_ql.geojson',   mkIconPt(icon_wp_gate, { label: true }));
@@ -1677,35 +1679,22 @@
       const greatwallLayer   = await loadGeoJSON('./data/greatwall_line.geojson',   { style: { color: '#ede8de', weight: 3.5, opacity: 0.95 } });
       greatwallLayer.addTo(map);
       const liaodongWallLayer = await loadGeoJSON('./data/liaodong_wall.geojson',   { style: { color: '#ede8de', weight: 3, opacity: 0.95, dashArray: '8,5' } });
-      // 요동변장은 초기 off
+      liaodongWallLayer.addTo(map);   // 초기 표시
 
       // 누르하치 더미 레이어 (체크박스 생성용, 실제 표시는 nhMarker로 별도 관리)
       const nhDummyLayer = L.layerGroup();
+      nhDummyLayer.addTo(map);        // 초기 표시
       // 누르하치 전체 위치 더미 레이어
       const nhAllLocsDummyLayer = L.layerGroup();
 
       const groupedOverlays = {
         "기본지리정보": {
-          [`${lineSvg('#000')}성경장군 관할 경계선`]:  admin_v1,
-          [`${lineSvg('#ede8de')}장성`]:               greatwallLayer,
-          [`${dotSvg('#004eff')}행정 지명(lv1/lv2)`]: admin_pts,
-          [`${dotSvg('#888')}역참`]:                   giyamun_pt
+          [`${lineSvg('#ede8de')}장성`]:     greatwallLayer,
+          [`${lineSvg('#ede8de')}요동변장`]: liaodongWallLayer
         },
-        "요동변장&유조변": {
-          [`${lineSvg('#ede8de')}요동변장`]:            liaodongWallLayer,
-          [`${lineSvg('#d60000')}유조변(강희-옹정)`]:  wpkangxi_bundle,
-          [`${lineSvg('#d60000')}유조변(건륭이후)`]:   wpqianlong_bundle
-        },
-        "참고자료_CHGIS (1820)": {
-          [`${lineSvg('#666')}省 경계선`]: chgisprov_pgn,
-          [`${lineSvg('#999')}府 경계선`]: chgispref_pgn,
-          [`${dotSvg('#000')}府 치소`]:    chgispref_pts,
-          [`${dotSvg('#000')}인문지명`]:   chgistwn_pts
-        },
-        "시계열": {
-          [`카룬 시계열 (1644–1850)`]: L.layerGroup(),
-          [`누르하치의 이동 (1583–1626)`]: nhDummyLayer,
-          [`누르하치의 위치 (1583–1626)`]: nhAllLocsDummyLayer
+        "누르하치(1583-1626)": {
+          [`누르하치의 이동 경로`]: nhDummyLayer,
+          [`누르하치의 위치`]:      nhAllLocsDummyLayer
         }
       };
 
@@ -1715,7 +1704,7 @@
         groupCheckboxes: true
       }).addTo(map);
 
-      insertLabelToggle();
+      // (전역 '라벨' 버튼은 해당 레이어들이 빠지면서 제거)
 
       // 검색 인덱스 빌드
       buildSearchIndex(kx_tai,     '邊臺(강희말기)');
@@ -1845,7 +1834,6 @@
 
       // ── 시계열 더미 레이어 이벤트로 체크박스 감지 ──
       // groupedLayers 컨트롤이 체크박스 체크 시 map에 layer를 add/remove함
-      const karunDummyLayer = groupedOverlays['시계열'][`카룬 시계열 (1644–1850)`];
 
       // 누르하치 ON 시: 유조변 OFF + 요동변장 ON; OFF 시 반대로 복원
       function nhSetWallMode(nhOn) {
@@ -1861,19 +1849,11 @@
           syncCheckbox(wpqianlong_bundle, false);
           // 요동변장 켜기
           syncCheckbox(liaodongWallLayer, true);
-        } else {
-          // 요동변장 끄기 (원래 초기상태가 off였으므로)
-          syncCheckbox(liaodongWallLayer, false);
-          // 유조변은 applyYear가 관리하므로 별도 복원 불필요
         }
+        // 요동변장은 기본 표시 레이어이므로 누르하치 레이어를 꺼도 유지한다
       }
 
       map.on('layeradd', e => {
-        if (e.layer === karunDummyLayer) {
-          karunTlActive = true; showTimelineBar();
-          const yr = Number(document.getElementById('tlRange')?.value || 1661);
-          applyYear(yr);
-        }
         if (e.layer === nhDummyLayer) {
           nhActive = true; showTimelineBar(); nhUpdateMarker(nhCurrentIdx);
           nhSetWallMode(true);
@@ -1884,9 +1864,6 @@
         }
       });
       map.on('layerremove', e => {
-        if (e.layer === karunDummyLayer) {
-          karunTlActive = false; showTimelineBar();
-        }
         if (e.layer === nhDummyLayer) {
           nhActive = false; nhStopPlay(); showTimelineBar(); nhRemoveMarker();
           // 다른 누르하치 레이어도 꺼져 있을 때만 벽 복원
@@ -1899,26 +1876,29 @@
         }
       });
 
-      // ── 고정 라벨 ──
-      L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-sm', opacity: 0.5 })
-        .setContent('盛京圍場')
-        .setLatLng([42 + 40/60, 125 + 15/60])
-        .addTo(map);
+      // ── 초기 표시: '누르하치의 이동 경로'가 켜진 상태이므로 수동 활성화 ──
+      // (체크박스는 컨트롤 생성 시점에 이미 체크되어 있고, 위 layeradd 핸들러는
+      //  그보다 나중에 등록되므로 여기서 한 번 직접 호출해 준다)
+      if (map.hasLayer(nhDummyLayer)) {
+        nhActive = true;
+        showTimelineBar();
+        nhUpdateMarker(nhCurrentIdx);
+        nhSetWallMode(true);
+      }
 
-      L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-sm', opacity: 0.5 })
-        .setContent('吉林圍場')
-        .setLatLng([43 + 10/60, 126 + 17/60])
-        .addTo(map);
-
-      L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-wrap', opacity: 0.5 })
-        .setContent('額爾敏/哈爾敏<br>蔘場')
-        .setLatLng([41 + 55/60, 126 + 8/60])
-        .addTo(map);
-
-      L.tooltip({ permanent: true, direction: 'center', className: 'fixed-label-wrap', opacity: 0.5 })
-        .setContent('養息牧<br>牧場')
-        .setLatLng([42 + 30/60, 122 + 14/60])
-        .addTo(map);
+      // ── 경유지 지명 라벨 on/off ──
+      (function initNhLabelToggle() {
+        const btn = document.getElementById('tlNhLabelBtn');
+        if (!btn) return;
+        let on = true;
+        const apply = () => {
+          const c = map.getContainer().classList;
+          if (on) { c.remove('nh-labels-hidden'); btn.textContent = '지명 ON';  btn.classList.remove('off'); }
+          else    { c.add('nh-labels-hidden');    btn.textContent = '지명 OFF'; btn.classList.add('off'); }
+        };
+        btn.addEventListener('click', () => { on = !on; apply(); });
+        apply();
+      })();
 
     })().catch(err => {
       console.error(err);
