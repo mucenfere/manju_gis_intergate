@@ -602,21 +602,6 @@
     <div class="search-results" id="searchResults"></div>
   </div>
 
-  <!-- 시계열 슬라이더 바 -->
-  <div class="timeline-bar" id="timelineBar" style="display:none;">
-    <!-- ── 카룬 시계열 ── -->
-    <div id="tlKarunSection">
-      <div class="tl-slider-row">
-        <input class="tl-year-input" id="tlYearInput" type="text" value="1661" title="년도 직접 입력 후 Enter" />
-        <div class="tl-track-wrap">
-          <input type="range" class="tl-range" id="tlRange" min="1644" max="1850" value="1661" step="1" />
-          <div class="tl-ticks" id="tlTicks"><!-- JS로 생성 --></div>
-        </div>
-        <button class="tl-all-btn" id="tlAllBtn">전체</button>
-      </div>
-      <div class="tl-eras" id="tlEras"><!-- JS로 생성 --></div>
-    </div>
-
     <!-- ── 누르하치 시계열 ── -->
     <div id="tlNhSection" style="display:none;">
       <hr class="tl-divider" />
@@ -1496,11 +1481,11 @@
     ];
 
     const ERA_JOSEON = [          // 朝鮮 — 자체 연호가 없으므로 王代로 표기
-      { from: '1567/07', name: '宣祖',   yuan: 1568 },
-      { from: '1608/02', name: '光海君', yuan: 1609 },
-      { from: '1623/03', name: '仁祖',   yuan: 1623 },   // 仁祖反正, 즉위년칭원
-      { from: '1649/05', name: '孝宗',   yuan: 1650 },
-      { from: '1659/05', name: '顯宗',   yuan: 1660 },
+      { from: '1567/07', name: '선조',   yuan: 1568 },
+      { from: '1608/02', name: '광해군', yuan: 1609 },
+      { from: '1623/03', name: '인조',   yuan: 1623 },   // 仁祖反正, 즉위년칭원
+      { from: '1649/05', name: '효종',   yuan: 1650 },
+      { from: '1659/05', name: '현종',   yuan: 1660 },
     ];
 
     function nhPickEra(list, idx) {
@@ -1511,7 +1496,7 @@
 
     function nhEraYear(e, idx) {
       const n = (1583 + Math.floor(idx / 12)) - e.yuan + 1;
-      return n <= 0 ? '卽位' : (n === 1 ? '元' : String(n));
+      return n <= 0 ? '卽位' : (n === 1 ? '원년' : String(n));
     }
 
     function nhUpdateEras(idx) {
@@ -1520,12 +1505,12 @@
       const parts = [];
       if (idx <= nhYmToIdx(ERA_MING_END)) {
         const m = nhPickEra(ERA_MING, idx);
-        if (m) parts.push(['明', m.name, nhEraYear(m, idx)]);
+        if (m) parts.push(['명', m.name, nhEraYear(m, idx)]);
       }
       const j = nhPickEra(ERA_JIN, idx);
       if (j) parts.push([j.state, j.name, nhEraYear(j, idx)]);
       const k = nhPickEra(ERA_JOSEON, idx);
-      if (k) parts.push(['朝鮮', k.name, nhEraYear(k, idx)]);
+      if (k) parts.push(['조선', k.name, nhEraYear(k, idx)]);
       el.innerHTML = parts
         .map(([st, nm, yr]) => `<span class="tl-era"><i>${st}</i><b>${nm}</b>&thinsp;${yr}</span>`)
         .join('');
