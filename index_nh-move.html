@@ -1206,14 +1206,18 @@
       // 꼭지: 원의 수평 중앙 정렬, SVG 좌표계에서 x=s/2
       const tx = s / 2;
 
-      // 시점 라벨 — 지도·지명과 겹쳐도 읽히도록 불투명 박스에 넣는다
-      const lf = Math.max(9, Math.round(11 * scale));        // 글자 크기
-      const lh = timeText ? Math.round(lf * 1.75) : 0;        // 라벨 높이
+      // 시점 라벨 — 검은 지명 라벨과 확실히 구분되도록 호박색 바탕 + 흰 테두리 + 할로
+      const lf = Math.max(9, Math.round(11.5 * scale));       // 글자 크기
+      const lh = timeText ? Math.round(lf * 2.15) : 0;         // 라벨 높이
       const labelHtml = timeText ? `
           <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);
-                      background:#2f2a22;color:#fff;border:1px solid rgba(255,255,255,.75);
-                      border-radius:3px;padding:1px 5px;font-size:${lf}px;font-weight:600;
-                      line-height:1.4;white-space:nowrap;letter-spacing:.2px;">${timeText}</div>` : '';
+                      background:#c8860a;color:#fff;
+                      border:1.5px solid #fff; border-radius:4px;
+                      padding:2px 8px;font-size:${lf}px;font-weight:700;
+                      line-height:1.35;white-space:nowrap;letter-spacing:.3px;
+                      text-shadow:0 1px 1px rgba(0,0,0,.4);
+                      box-shadow:0 0 0 1.5px rgba(90,55,0,.55), 0 2px 8px rgba(0,0,0,.45);
+                      ">${timeText}</div>` : '';
 
       return L.divIcon({
         html: `<div style="position:relative;width:${s}px;height:${lh+s+tip}px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.65))">
