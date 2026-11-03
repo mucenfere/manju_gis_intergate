@@ -89,6 +89,34 @@
     .tl-nh-lbl-btn:hover{ background: #fdf3e0; }
     .tl-nh-lbl-btn.off{ color: #999; border-color: #ccc; }
 
+    /* 레이어 상자 접기/펴기 — 버튼은 상자 우측 하단.
+       상자 상단은 검색창과 겹치므로 그 자리에 두면 눌리지 않는다. */
+    .lyr-foot{
+      display: flex; align-items: center; gap: 12px;
+      margin-top: 8px; padding-top: 6px; border-top: 1px solid #e3e0d8;
+    }
+    .lyr-foot-label{
+      font-size: 12px; font-weight: 600; color: #555; display: none;
+    }
+    .lyr-btn{
+      margin-left: auto;
+      border: 1px solid #c9c5bb; background: #fbfaf7; color: #555;
+      border-radius: 4px; font-size: 11px; padding: 3px 9px;
+      cursor: pointer; line-height: 1.4; white-space: nowrap;
+    }
+    .lyr-btn:hover{ background: #f0ede6; color: #222; }
+
+    .leaflet-control-layers.lyr-folded{
+      min-width: 0;
+      min-height: 74px;              /* 버튼이 검색창 아래로 내려오도록 */
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .leaflet-control-layers.lyr-folded .leaflet-control-layers-list{ display: none !important; }
+    .leaflet-control-layers.lyr-folded .lyr-foot{
+      margin-top: 0; padding-top: 0; border-top: none;
+    }
+    .leaflet-control-layers.lyr-folded .lyr-foot-label{ display: inline; }
+
     .leaflet-control-layers{
       max-height: calc(100vh - 60px - 54px);
       overflow: hidden;
@@ -532,6 +560,18 @@
       margin-left: auto;
       font-size: 10px; color: #888;
     }
+
+    /* 연호 표시 (明 / 後金·淸 / 朝鮮) */
+    .tl-nh-eras {
+      display: flex; align-items: center; gap: 11px;
+      margin-left: 10px;
+      font-size: 11.5px; color: #2d2d2d; white-space: nowrap;
+    }
+    .tl-nh-eras .tl-era i {
+      font-style: normal; color: #a09a8c;
+      font-size: 10px; margin-right: 3px;
+    }
+    .tl-nh-eras .tl-era b { font-weight: 600; }
     .tl-trust-legend span { display: flex; align-items: center; gap: 3px; }
     .tl-trust-dot {
       width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
@@ -584,6 +624,7 @@
         <span class="tl-nh-label">누르하치 이동</span>
         <input class="tl-year-input nh" id="tlNhInput" type="text" value="1583/01" title="년/월 입력 후 Enter (예: 1619/03)" />
         <button class="tl-nh-lbl-btn" id="tlNhLabelBtn" type="button" title="경유지 지명 라벨 표시/숨김">지명 ON</button>
+        <div class="tl-nh-eras" id="tlNhEras" title="明 / 後金·淸 / 朝鮮 연호"></div>
         <div class="tl-trust-legend">
           <span><span class="tl-trust-dot" style="background:#6ab04c"></span>확실</span>
           <span><span class="tl-trust-dot" style="background:#d4a855"></span>유력</span>
@@ -748,6 +789,41 @@
           });
         }
       });
+    }
+
+    // ── 레이어 상자 접기/펴기 (버튼은 우측 하단) ──
+    function insertLayerFold() {
+      const box = document.querySelector('.leaflet-control-layers');
+      if (!box || box.querySelector('.lyr-foot')) return;
+
+      const foot = document.createElement('div');
+      foot.className = 'lyr-foot';
+      const label = document.createElement('span');
+      label.className = 'lyr-foot-label';
+      label.textContent = '레이어';
+      const btn = document.createElement('button');
+      btn.className = 'lyr-btn';
+      btn.type = 'button';
+      btn.title = '레이어 목록 접기/펴기';
+      foot.appendChild(label);
+      foot.appendChild(btn);
+      box.appendChild(foot);          // 목록 아래, 상자의 맨 끝
+
+      const sync = () => {
+        btn.textContent = box.classList.contains('lyr-folded') ? '펴기 \u25be' : '접기 \u25b4';
+      };
+      btn.addEventListener('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
+        box.classList.toggle('lyr-folded');
+        sync();
+      });
+
+      // 화면이 좁으면 접은 채로 시작한다
+      if (window.matchMedia('(max-width: 768px)').matches) {
+        box.classList.add('lyr-folded');
+      }
+      sync();
     }
 
     // ── 라벨 전체 토글 ──
@@ -1400,8 +1476,64 @@
       });
     }
 
+    /* ── 연호(年號) ──────────────────────────────────────────────
+       元年 기준은 유년칭원(踰年稱元)이며, 반정으로 즉위한 仁祖만 즉위년칭원이다.
+       즉위년(元年 이전 해)은 '卽位'로 표기한다. */
+    const ERA_MING = [            // 明
+      { from: '1573/01', name: '萬曆', yuan: 1573 },
+      { from: '1620/08', name: '泰昌', yuan: 1620 },   // 光宗 즉위 8월부터
+      { from: '1621/01', name: '天啓', yuan: 1621 },
+      { from: '1628/01', name: '崇禎', yuan: 1628 },
+    ];
+    const ERA_MING_END = '1644/03';                    // 崇禎帝 自盡 — 이후 표기 중단
+
+    const ERA_JIN = [             // 後金 → 淸 (天命 개원 이후부터 표기)
+      { from: '1616/01', name: '天命', yuan: 1616, state: '後金' },
+      { from: '1627/01', name: '天聰', yuan: 1627, state: '後金' },
+      { from: '1636/04', name: '崇德', yuan: 1636, state: '淸' },   // 國號를 大淸으로
+      { from: '1644/01', name: '順治', yuan: 1644, state: '淸' },
+      { from: '1662/01', name: '康熙', yuan: 1662, state: '淸' },
+    ];
+
+    const ERA_JOSEON = [          // 朝鮮 — 자체 연호가 없으므로 王代로 표기
+      { from: '1567/07', name: '宣祖',   yuan: 1568 },
+      { from: '1608/02', name: '光海君', yuan: 1609 },
+      { from: '1623/03', name: '仁祖',   yuan: 1623 },   // 仁祖反正, 즉위년칭원
+      { from: '1649/05', name: '孝宗',   yuan: 1650 },
+      { from: '1659/05', name: '顯宗',   yuan: 1660 },
+    ];
+
+    function nhPickEra(list, idx) {
+      let cur = null;
+      for (const e of list) if (nhYmToIdx(e.from) <= idx) cur = e;
+      return cur;
+    }
+
+    function nhEraYear(e, idx) {
+      const n = (1583 + Math.floor(idx / 12)) - e.yuan + 1;
+      return n <= 0 ? '卽位' : (n === 1 ? '元' : String(n));
+    }
+
+    function nhUpdateEras(idx) {
+      const el = document.getElementById('tlNhEras');
+      if (!el) return;
+      const parts = [];
+      if (idx <= nhYmToIdx(ERA_MING_END)) {
+        const m = nhPickEra(ERA_MING, idx);
+        if (m) parts.push(['明', m.name, nhEraYear(m, idx)]);
+      }
+      const j = nhPickEra(ERA_JIN, idx);
+      if (j) parts.push([j.state, j.name, nhEraYear(j, idx)]);
+      const k = nhPickEra(ERA_JOSEON, idx);
+      if (k) parts.push(['朝鮮', k.name, nhEraYear(k, idx)]);
+      el.innerHTML = parts
+        .map(([st, nm, yr]) => `<span class="tl-era"><i>${st}</i><b>${nm}</b>&thinsp;${yr}</span>`)
+        .join('');
+    }
+
     function nhUpdateMarker(idx) {
       if (!nhActive) return;
+      nhUpdateEras(idx);
       const rec = nhGetRecord(idx);
       if (!rec) return;
       const latlng = [rec.lat, rec.lng];
@@ -1704,7 +1836,7 @@
         groupCheckboxes: true
       }).addTo(map);
 
-      // (전역 '라벨' 버튼은 해당 레이어들이 빠지면서 제거)
+      insertLayerFold();
 
       // 검색 인덱스 빌드
       buildSearchIndex(kx_tai,     '邊臺(강희말기)');
@@ -1899,7 +2031,7 @@
         btn.addEventListener('click', () => { on = !on; apply(); });
         apply();
       })();
-
+      
     })().catch(err => {
       console.error(err);
       alert(err.message || err);
